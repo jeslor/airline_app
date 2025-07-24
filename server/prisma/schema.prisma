@@ -1,38 +1,15 @@
-model Airline {
-  id        String   @id @default(cuid())
-  name      String
-  code      String   @unique
-  country   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-  flights   Flight[]
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
-model Flight {
-  id          String   @id @default(cuid())
-  flightNumber String  @unique
-  departure   DateTime
-  arrival     DateTime
-  origin      String
-  destination String
-  airlineId   String
-airline     Airline @relation(fields: [airlineId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-model Passenger {
-  id        String   @id @default(cuid())
-  firstName String
-  lastName  String
-  email     String   @unique
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-model Ticket {
-  id          String   @id @default(cuid())
-  flightId    String
-  passengerId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
