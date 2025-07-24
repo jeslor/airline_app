@@ -10,6 +10,66 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "mongodb"
+  url      = env("DBURL")
+}
+
+model Airline {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  code        String   @unique
+  description String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  flights     Flight[]
+}
+
+model Flight {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  flightNumber String
+  departure   DateTime
+  arrival     DateTime
+  origin      String
+  destination String
+  airlineId   String   @db.ObjectId
+  airline     Airline  @relation(fields: [airlineId], references: [id])
+
+  passengers  Passenger[]
+  tickets     Ticket[] // Added opposite relation for Ticket
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([flightNumber])
+}
+
+model Passenger {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName   String
+  lastName    String
+  email       String   @unique
+  phoneNumber String?
+  flightId    String   @db.ObjectId
+  flight      Flight   @relation(fields: [flightId], references: [id])
+  tickets     Ticket[] // Added relation to Ticket
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Ticket {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  passengerId String   @db.ObjectId
+  passenger   Passenger @relation(fields: [passengerId], references: [id])
+  flightId    String   @db.ObjectId
+  flight      Flight   @relation(fields: [flightId], references: [id])
+  seatNumber  String
+  price       Float
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([passengerId, flightId])
 }
