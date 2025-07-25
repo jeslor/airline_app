@@ -1,6 +1,12 @@
-import React, { useRef, useState, useCallback, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, useTexture, Line } from "@react-three/drei"; // Import Line from drei
+import React, {
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, useTexture, Line } from "@react-three/drei";
 import * as THREE from "three";
 
 // Convert latitude/longitude to 3D position on globe
@@ -10,6 +16,7 @@ interface LatLon {
 }
 
 const GLOBE_RADIUS = 2; // Define a constant for the globe radius
+const ARC_HEIGHT_FACTOR = 0.5; // Controls the height of the flight path arc
 
 function latLonToVector3(
   lat: number,
@@ -121,49 +128,111 @@ const cities: CityWithPosition[] = [
     lon: 72.8777,
     position: latLonToVector3(19.076, 72.8777),
   },
+  // --- Additional 10 Cities ---
+  {
+    name: "Beijing",
+    lat: 39.9042,
+    lon: 116.4074,
+    position: latLonToVector3(39.9042, 116.4074),
+  },
+  {
+    name: "Santiago",
+    lat: -33.4489,
+    lon: -70.6693,
+    position: latLonToVector3(-33.4489, -70.6693),
+  },
+  {
+    name: "Berlin",
+    lat: 52.52,
+    lon: 13.405,
+    position: latLonToVector3(52.52, 13.405),
+  },
+  {
+    name: "Istanbul",
+    lat: 41.0082,
+    lon: 28.9784,
+    position: latLonToVector3(41.0082, 28.9784),
+  },
+  {
+    name: "Lima",
+    lat: -12.0464,
+    lon: -77.0428,
+    position: latLonToVector3(-12.0464, -77.0428),
+  },
+  {
+    name: "Cairo",
+    lat: 30.0444,
+    lon: 31.2357,
+    position: latLonToVector3(30.0444, 31.2357),
+  },
+  {
+    name: "Seoul",
+    lat: 37.5665,
+    lon: 126.978,
+    position: latLonToVector3(37.5665, 126.978),
+  },
+  {
+    name: "Buenos Aires",
+    lat: -34.6037,
+    lon: -58.3816,
+    position: latLonToVector3(-34.6037, -58.3816),
+  },
+  {
+    name: "Wellington",
+    lat: -41.2865,
+    lon: 174.7762,
+    position: latLonToVector3(-41.2865, 174.7762),
+  },
+  {
+    name: "Stockholm",
+    lat: 59.3293,
+    lon: 18.0686,
+    position: latLonToVector3(59.3293, 18.0686),
+  },
 ];
 
-// Earth component, now a container for flight paths
-interface RotationTarget {
-  y: number;
-  x: number;
-  positions: THREE.Vector3[]; // Still used by GlobeRotator to determine center
-}
-
-interface EarthProps {
-  rotationTarget: React.RefObject<RotationTarget>;
-  children: React.ReactNode; // Add children prop
-}
-
-function Earth({ rotationTarget, children }: EarthProps) {
-  const earthRef = useRef<THREE.Mesh>(null);
+// Earth component - now simplified for free rotation
+function Earth({ children }: { children: React.ReactNode }) {
   const texture = useTexture("/images/textures/earth.jpg");
 
-  useFrame(() => {
-    if (earthRef.current && rotationTarget.current) {
-      earthRef.current.rotation.y = rotationTarget.current.y;
-      earthRef.current.rotation.x = rotationTarget.current.x;
-    }
-  });
-
   return (
-    <mesh ref={earthRef}>
+    <mesh>
       <sphereGeometry args={[GLOBE_RADIUS, 64, 64]} />
       <meshStandardMaterial map={texture} />
-      {children} {/* Render children (paths) as part of the Earth mesh */}
+      {children}
+    </mesh>
+  );
+}
+
+// Component to render a small circle at city positions
+interface CityPointProps {
+  position: THREE.Vector3;
+  color?: string | THREE.Color;
+  radius?: number;
+}
+function CityPoint({
+  position,
+  color = "yellow",
+  radius = 0.02, // Small radius for the circle
+}: CityPointProps) {
+  return (
+    <mesh position={position}>
+      <sphereGeometry args={[radius, 16, 16]} />
+      <meshBasicMaterial color={color} />
     </mesh>
   );
 }
 
 // FlightPath draws a visible curved line between start and end using @react-three/drei/Line
 interface FlightPathProps {
-  id: number; // Unique ID for keying
+  id: number;
   start: CityWithPosition;
   end: CityWithPosition;
-  progress: number; // A value from 0 to 1 for line growth
-  onFlightComplete: (id: number) => void; // Callback when flight finishes
-  lineWidth?: number; // Optional prop for line thickness
-  color?: string | THREE.Color; // Optional prop for line color
+  progress: number;
+  opacity: number;
+  onFlightComplete: (id: number) => void;
+  lineWidth?: number;
+  color?: string | THREE.Color;
 }
 
 function FlightPath({
@@ -171,80 +240,99 @@ function FlightPath({
   start,
   end,
   progress,
+  opacity,
   onFlightComplete,
   lineWidth = 2,
-  color = "white",
+  color = "#00ff00", // Default to a vibrant green
 }: FlightPathProps) {
-  const curvePoints = React.useMemo(() => {
+  const curvePoints = useMemo(() => {
     const startVec = start.position;
     const endVec = end.position;
-    const mid = startVec
-      .clone()
-      .add(endVec)
-      .multiplyScalar(0.5)
-      .normalize()
-      .multiplyScalar(GLOBE_RADIUS + 0.5); // Adjust height of the arc
-    const curve = new THREE.QuadraticBezierCurve3(startVec, mid, endVec);
-    return curve.getPoints(100); // Get 100 points for the curve
+
+    // Calculate the midpoint for the arc, elevated above the globe
+    const midPoint = startVec.clone().lerp(endVec, 0.5); // Interpolate halfway
+    const midNormalized = midPoint.normalize(); // Normalize to unit sphere
+    const arcMid = midNormalized.multiplyScalar(
+      GLOBE_RADIUS + ARC_HEIGHT_FACTOR
+    ); // Elevate
+
+    // Create a QuadraticBezierCurve3
+    const curve = new THREE.QuadraticBezierCurve3(startVec, arcMid, endVec);
+    return curve.getPoints(50); // Reduced points for potentially better performance, 50 is often enough
   }, [start, end]);
 
-  // Use a ref for the current progress to avoid re-rendering issues
-  const currentProgressRef = useRef(progress);
-  currentProgressRef.current = progress; // Keep the ref updated with the latest prop
+  const hasCompletedGrowth = useRef(false);
 
-  // Slice the points array based on progress to simulate growth
-  const animatedPoints = React.useMemo(() => {
-    const endIndex = Math.floor(
-      curvePoints.length * currentProgressRef.current
-    );
-    // Ensure at least 2 points for a line, or 0 if progress is very low
-    return curvePoints.slice(0, Math.max(2, endIndex));
-  }, [curvePoints, currentProgressRef.current]); // Recompute when curvePoints or progress changes
-
-  // Use a separate effect or useFrame to check for completion
-  useFrame(() => {
-    // Check if the flight is complete
-    if (currentProgressRef.current >= 1) {
+  useEffect(() => {
+    if (progress >= 1 && !hasCompletedGrowth.current) {
       onFlightComplete(id);
+      hasCompletedGrowth.current = true; // Mark as completed
     }
-  });
+    if (progress < 1) {
+      hasCompletedGrowth.current = false; // Reset if for some reason progress goes back below 1
+    }
+  }, [progress, id, onFlightComplete]);
 
-  // Only render the line if there are enough points to draw
-  return animatedPoints.length > 1 ? (
+  // Use memoization for animatedPoints to prevent unnecessary re-calculations
+  const animatedPoints = useMemo(() => {
+    const endIndex = Math.floor(curvePoints.length * progress);
+    return curvePoints.slice(0, Math.max(2, endIndex)); // Ensure at least 2 points for a line
+  }, [curvePoints, progress]);
+
+  // Only render the line if there are enough points to draw AND it's not fully transparent
+  return animatedPoints.length > 1 && opacity > 0 ? (
     <Line
-      points={animatedPoints} // Pass the sliced points
+      points={animatedPoints}
       color={color}
       lineWidth={lineWidth}
-      // You can add more props for Line such as segments, etc.
+      opacity={opacity}
+      // @ts-ignore - 'depthWrite' is not in LineProps but is a valid Material property
+      depthWrite={opacity === 1 ? true : false} // Improves rendering performance when transparent
     />
   ) : null;
 }
 
-// Manages multiple flight paths
+// Manages multiple flight paths and their lifecycle
 interface ActiveFlight {
   id: number;
   from: CityWithPosition;
   to: CityWithPosition;
   progress: number;
   speed: number;
+  status: "growing" | "fadingOut" | "done";
+  opacity: number;
 }
 
-function FlightCoordinator({
-  rotationTarget,
-}: {
-  rotationTarget: React.RefObject<RotationTarget>;
-}) {
-  const MAX_ACTIVE_FLIGHTS = 12; // More than 10 active paths
+function FlightCoordinator() {
+  const MAX_ACTIVE_FLIGHTS = 20; // Slightly reduced to lessen initial load
+  const FADE_OUT_DURATION = 0.6; // Faster fade out
+  const FADE_IN_DURATION = 0.4; // Faster fade in
+  const MIN_FLIGHT_DURATION = 1.5; // Minimum time for a flight to grow
+  const MAX_FLIGHT_DURATION = 3.0; // Maximum time for a flight to grow
+
   const [activeFlights, setActiveFlights] = useState<ActiveFlight[]>([]);
   const nextFlightId = useRef(0);
 
   // Function to add a new flight
   const addNewFlight = useCallback(() => {
+    // Ensure we don't add too many flights if a removal is pending
+    if (
+      activeFlights.filter((f) => f.status !== "done").length >=
+      MAX_ACTIVE_FLIGHTS
+    ) {
+      return;
+    }
+
     let from = cities[Math.floor(Math.random() * cities.length)];
     let to;
     do {
       to = cities[Math.floor(Math.random() * cities.length)];
     } while (to.name === from.name);
+
+    const randomSpeed =
+      1 /
+      (MIN_FLIGHT_DURATION +
+        Math.random() * (MAX_FLIGHT_DURATION - MIN_FLIGHT_DURATION));
 
     setActiveFlights((prevFlights) => [
       ...prevFlights,
@@ -253,63 +341,73 @@ function FlightCoordinator({
         from,
         to,
         progress: 0,
-        speed: 0.008 + Math.random() * 0.008, // Adjust speed for effect
+        speed: randomSpeed,
+        status: "growing",
+        opacity: 0,
       },
     ]);
-  }, []);
+  }, [activeFlights]); // Added activeFlights to dependency array for accurate length check
 
   // Initialize with MAX_ACTIVE_FLIGHTS
   useEffect(() => {
-    if (activeFlights.length === 0) {
-      // Only initialize if no flights are active
-      for (let i = 0; i < MAX_ACTIVE_FLIGHTS; i++) {
+    // Fill up to MAX_ACTIVE_FLIGHTS if there are not enough
+    if (activeFlights.length < MAX_ACTIVE_FLIGHTS) {
+      const flightsToAdd = MAX_ACTIVE_FLIGHTS - activeFlights.length;
+      for (let i = 0; i < flightsToAdd; i++) {
         addNewFlight();
       }
     }
-  }, [addNewFlight, activeFlights.length]); // Add activeFlights.length as dependency
+  }, [addNewFlight, activeFlights.length]);
 
-  // Callback for when a flight path completes its animation
-  const handleFlightComplete = useCallback(
+  // Callback for when a flight path growth animation completes
+  const handleFlightGrowthComplete = useCallback(
     (id: number) => {
       setActiveFlights((prevFlights) =>
-        prevFlights.filter((flight) => flight.id !== id)
+        prevFlights.map(
+          (flight) =>
+            flight.id === id
+              ? { ...flight, status: "fadingOut", progress: 1 }
+              : flight // Ensure progress is 1 for faded flights
+        )
       );
-      // Delay adding a new flight slightly to avoid immediate overlap/flicker
-      setTimeout(() => {
-        addNewFlight();
-      }, 100); // Short delay
+      // Immediately add a new flight to maintain the constant number of active flights
+      addNewFlight();
     },
     [addNewFlight]
   );
 
   useFrame((_, delta) => {
-    // Update progress for all active flights
     setActiveFlights((prevFlights) => {
-      const updatedFlights = prevFlights.map((flight) => ({
-        ...flight,
-        progress: Math.min(flight.progress + delta * flight.speed, 1),
-      }));
+      const updatedFlights = prevFlights
+        .map((flight) => {
+          let newProgress = flight.progress;
+          let newOpacity = flight.opacity;
+          let newStatus = flight.status;
 
-      // Collect positions for GlobeRotator
-      if (rotationTarget.current) {
-        rotationTarget.current.positions = []; // Clear for this frame
-        updatedFlights.forEach((flight) => {
-          // Get a point near the current head of the growing segment to influence rotation
-          const curve = new THREE.QuadraticBezierCurve3(
-            flight.from.position,
-            flight.from.position
-              .clone()
-              .add(flight.to.position)
-              .multiplyScalar(0.5)
-              .normalize()
-              .multiplyScalar(GLOBE_RADIUS + 0.5),
-            flight.to.position
-          );
-          // Use the actual point at the current progress for better centering
-          const point = curve.getPoint(flight.progress);
-          rotationTarget.current.positions.push(point.clone());
-        });
-      }
+          if (flight.status === "growing") {
+            newProgress = Math.min(flight.progress + delta * flight.speed, 1);
+            newOpacity = Math.min(flight.opacity + delta / FADE_IN_DURATION, 1);
+            if (newProgress >= 1 && newOpacity >= 1) {
+              // Both growth and fade-in complete
+              newStatus = "fadingOut";
+            }
+          } else if (flight.status === "fadingOut") {
+            newOpacity = Math.max(
+              flight.opacity - delta / FADE_OUT_DURATION,
+              0
+            );
+            if (newOpacity <= 0) {
+              newStatus = "done";
+            }
+          }
+          return {
+            ...flight,
+            progress: newProgress,
+            opacity: newOpacity,
+            status: newStatus,
+          };
+        })
+        .filter((flight) => flight.status !== "done"); // Filter out done flights
 
       return updatedFlights;
     });
@@ -317,6 +415,11 @@ function FlightCoordinator({
 
   return (
     <>
+      {/* Render all city points once */}
+      {cities.map((city) => (
+        <CityPoint key={city.name} position={city.position} color="yellow" />
+      ))}
+      {/* Render active flight paths */}
       {activeFlights.map((flight) => (
         <FlightPath
           key={flight.id}
@@ -324,85 +427,54 @@ function FlightCoordinator({
           start={flight.from}
           end={flight.to}
           progress={flight.progress}
-          onFlightComplete={handleFlightComplete}
-          lineWidth={2} // Explicitly set linewidth
-          color={"#00ff00"} // Example color
+          opacity={flight.opacity}
+          onFlightComplete={handleFlightGrowthComplete}
+          lineWidth={2}
+          color={"#00ff00"}
         />
       ))}
     </>
   );
 }
 
-// New child component to handle globe rotation inside Canvas
-function GlobeRotator({
-  rotationTarget,
-  orbitControlsRef,
-}: {
-  rotationTarget: React.RefObject<RotationTarget>;
-  orbitControlsRef: React.RefObject<any>;
-}) {
-  useFrame(() => {
-    if (
-      orbitControlsRef.current &&
-      orbitControlsRef.current.hasUserInteracted
-    ) {
-      if (rotationTarget.current) {
-        rotationTarget.current.positions = [];
-      }
-      return;
-    }
+// New component to handle WebGLRenderer settings
+function SceneSetup() {
+  const { gl } = useThree(); // This hook is now correctly inside the Canvas context
 
-    const positions = rotationTarget.current?.positions;
-    if (!positions || positions.length === 0) return;
+  useEffect(() => {
+    gl.setPixelRatio(window.devicePixelRatio);
+    // You can add more renderer settings here if needed
+    // gl.toneMapping = THREE.ACESFilmicToneMapping;
+    // gl.toneMappingExposure = 1.0;
+  }, [gl]);
 
-    const avg = positions
-      .reduce((acc, pos) => acc.add(pos), new THREE.Vector3(0, 0, 0))
-      .divideScalar(positions.length);
-
-    const spherical = new THREE.Spherical().setFromVector3(avg);
-
-    if (rotationTarget.current) {
-      const targetY = -spherical.theta;
-      const targetX = spherical.phi - Math.PI / 2;
-
-      rotationTarget.current.y = THREE.MathUtils.lerp(
-        rotationTarget.current.y,
-        targetY,
-        0.05
-      );
-      rotationTarget.current.x = THREE.MathUtils.lerp(
-        rotationTarget.current.x,
-        targetX,
-        0.05
-      );
-
-      rotationTarget.current.positions = [];
-    }
-  });
-
-  return null;
+  return null; // This component doesn't render any Three.js objects directly
 }
 
 // Main component rendering the globe and multiple lines
 export default function GlobeWithMultiplePlanes() {
-  const rotationTarget = useRef<RotationTarget>({ y: 0, x: 0, positions: [] });
   const orbitControlsRef = useRef<any>(null);
 
   return (
-    <Canvas camera={{ position: [0, 2, 6], fov: 60 }}>
+    <Canvas
+      camera={{ position: [0, 2, 6], fov: 60 }}
+      dpr={[1, 2]} // Enable dpr (device pixel ratio) for sharp rendering on high-DPI screens
+    >
+      {/* SceneSetup is now a child of Canvas */}
+      <SceneSetup />
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 5, 5]} />
-      <Earth rotationTarget={rotationTarget}>
-        <FlightCoordinator rotationTarget={rotationTarget} />
+      <Earth>
+        <FlightCoordinator />
       </Earth>
-      <GlobeRotator
-        rotationTarget={rotationTarget}
-        orbitControlsRef={orbitControlsRef}
-      />
       <OrbitControls
         ref={orbitControlsRef}
         enablePan={false}
         enableZoom={false}
+        minDistance={GLOBE_RADIUS * 1.5} // Prevent camera from going too close
+        maxDistance={GLOBE_RADIUS * 4} // Prevent camera from going too far
+        // dampingFactor={0.05} // Adjust for smoother rotation stop
+        // enableDamping={true} // Enable damping for smoother animation when released
       />
     </Canvas>
   );
