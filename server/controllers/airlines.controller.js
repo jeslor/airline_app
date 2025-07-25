@@ -1,5 +1,5 @@
-import asyncWrapper from "../utils/asyncWrapper";
-import { PrismaClient } from "@prisma/client";
+const asyncWrapper = require("../utils/asyncWrapper");
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 const getAirlines = asyncWrapper(async (req, res) => {
