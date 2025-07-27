@@ -16,7 +16,7 @@ interface LatLon {
   lon: number;
 }
 
-const GLOBE_RADIUS = 2.3; // Define a constant for the globe radius
+const GLOBE_RADIUS = 2.9; // Define a constant for the globe radius
 const ARC_HEIGHT_FACTOR = 0.6; // Controls the height of the flight path arc
 
 function latLonToVector3(
