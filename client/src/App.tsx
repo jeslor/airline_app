@@ -1,9 +1,9 @@
-import GlobeWithPlane from "./components/Globe";
+import GlobeWrapper from "./components/Globe/GlobeWrapper";
 
 const App = () => {
   return (
     <div className="h-screen">
-      <GlobeWithPlane />
+      <GlobeWrapper />
     </div>
   );
 };
