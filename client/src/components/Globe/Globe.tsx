@@ -8,6 +8,7 @@ import React, {
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, useTexture, Line } from "@react-three/drei";
 import * as THREE from "three";
+import { OrbitControls as OrbitControlsImpl } from "three-stdlib"; // Import the actual OrbitControls type
 
 // Convert latitude/longitude to 3D position on globe
 interface LatLon {
@@ -15,8 +16,8 @@ interface LatLon {
   lon: number;
 }
 
-const GLOBE_RADIUS = 2; // Define a constant for the globe radius
-const ARC_HEIGHT_FACTOR = 0.5; // Controls the height of the flight path arc
+const GLOBE_RADIUS = 2.3; // Define a constant for the globe radius
+const ARC_HEIGHT_FACTOR = 0.6; // Controls the height of the flight path arc
 
 function latLonToVector3(
   lat: number,
@@ -191,12 +192,79 @@ const cities: CityWithPosition[] = [
   },
 ];
 
+interface EarthProps {
+  children: React.ReactNode;
+  orbitControlsRef: React.RefObject<OrbitControlsImpl | null>; // Allow null for initial ref value
+}
+
 // Earth component - now simplified for free rotation
-function Earth({ children }: { children: React.ReactNode }) {
+function Earth({ children, orbitControlsRef }: EarthProps) {
   const texture = useTexture("/images/textures/earth.jpg");
+  const meshRef = useRef<THREE.Mesh>(null); // Ref for the Earth mesh
+
+  // State to manage if the user is interacting
+  const [isInteracting, setIsInteracting] = useState(false);
+  // State to track if the globe is returning to upright
+  const [isReturningToUpright, setIsReturningToUpright] = useState(false);
+
+  // Initial target quaternion for the upright position
+  const targetQuaternion = useMemo(() => {
+    const q = new THREE.Quaternion();
+    // Assuming the initial position (0, 0, 0) for rotation means the North Pole is up.
+    // If your globe texture has a different orientation, you might need to adjust this.
+    q.setFromEuler(new THREE.Euler(0, 0, 0)); // No initial rotation, or adjust as needed
+    return q;
+  }, []);
+
+  useEffect(() => {
+    const controls = orbitControlsRef.current;
+    if (controls) {
+      // Event listeners for user interaction
+      const onStart = () => {
+        setIsInteracting(true);
+        setIsReturningToUpright(false); // Stop any return to upright if user interacts
+      };
+      const onEnd = () => {
+        setIsInteracting(false);
+        setIsReturningToUpright(true); // Start returning to upright when interaction ends
+      };
+
+      controls.addEventListener("start", onStart);
+      controls.addEventListener("end", onEnd);
+
+      return () => {
+        controls.removeEventListener("start", onStart);
+        controls.removeEventListener("end", onEnd);
+      };
+    }
+  }, [orbitControlsRef]); // Depend on orbitControlsRef
+
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      if (isInteracting) {
+        // If user is interacting, stop the automatic rotation
+        return;
+      }
+
+      if (isReturningToUpright) {
+        // Smoothly return to the upright position
+        // The speed of slerp is proportional to delta, making it frame-rate independent
+        meshRef.current.quaternion.slerp(targetQuaternion, 5 * delta); // Adjust 5 for speed
+        // Check if close enough to upright to stop returning
+        if (meshRef.current.quaternion.angleTo(targetQuaternion) < 0.01) {
+          setIsReturningToUpright(false);
+          // Optional: Snap to target once close to avoid tiny residual rotation
+          meshRef.current.quaternion.copy(targetQuaternion);
+        }
+      } else {
+        // Resume slow rotation if not interacting and not returning to upright
+        meshRef.current.rotation.y += 0.05 * delta; // Adjust speed as desired
+      }
+    }
+  });
 
   return (
-    <mesh>
+    <mesh ref={meshRef}>
       <sphereGeometry args={[GLOBE_RADIUS, 64, 64]} />
       <meshStandardMaterial map={texture} />
       {children}
@@ -287,6 +355,7 @@ function FlightPath({
       lineWidth={lineWidth}
       opacity={opacity}
       // @ts-ignore - 'depthWrite' is not in LineProps but is a valid Material property
+      // It's a valid property of MeshBasicMaterial which Line uses, but not directly on LineProps
       depthWrite={opacity === 1 ? true : false} // Improves rendering performance when transparent
     />
   ) : null;
@@ -307,8 +376,8 @@ function FlightCoordinator() {
   const MAX_ACTIVE_FLIGHTS = 20; // Slightly reduced to lessen initial load
   const FADE_OUT_DURATION = 0.6; // Faster fade out
   const FADE_IN_DURATION = 0.4; // Faster fade in
-  const MIN_FLIGHT_DURATION = 1.5; // Minimum time for a flight to grow
-  const MAX_FLIGHT_DURATION = 3.0; // Maximum time for a flight to grow
+  const MIN_FLIGHT_DURATION = 2; // Minimum time for a flight to grow
+  const MAX_FLIGHT_DURATION = 3.5; // Maximum time for a flight to grow
 
   const [activeFlights, setActiveFlights] = useState<ActiveFlight[]>([]);
   const nextFlightId = useRef(0);
@@ -385,7 +454,7 @@ function FlightCoordinator() {
           let newStatus = flight.status;
 
           if (flight.status === "growing") {
-            newProgress = Math.min(flight.progress + delta * flight.speed, 1);
+            newProgress = Math.min(flight.progress + delta * flight.speed, 2);
             newOpacity = Math.min(flight.opacity + delta / FADE_IN_DURATION, 1);
             if (newProgress >= 1 && newOpacity >= 1) {
               // Both growth and fade-in complete
@@ -453,7 +522,8 @@ function SceneSetup() {
 
 // Main component rendering the globe and multiple lines
 export default function GlobeWithMultiplePlanes() {
-  const orbitControlsRef = useRef<any>(null);
+  // Specify the type for the useRef hook for OrbitControls
+  const orbitControlsRef = useRef<OrbitControlsImpl>(null);
 
   return (
     <Canvas
@@ -462,13 +532,14 @@ export default function GlobeWithMultiplePlanes() {
     >
       {/* SceneSetup is now a child of Canvas */}
       <SceneSetup />
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={1.5} />
       <directionalLight position={[5, 5, 5]} />
-      <Earth>
+      {/* Pass the orbitControlsRef down to the Earth component */}
+      <Earth orbitControlsRef={orbitControlsRef}>
         <FlightCoordinator />
       </Earth>
       <OrbitControls
-        ref={orbitControlsRef}
+        ref={orbitControlsRef} // Assign the ref here
         enablePan={false}
         enableZoom={false}
         minDistance={GLOBE_RADIUS * 1.5} // Prevent camera from going too close
