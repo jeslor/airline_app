@@ -1,6 +1,6 @@
-"use client";
-
-import { useState } from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -20,120 +20,110 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { flightBookingSchema } from "@/schemas/FlightBookingSchema";
 
 export function FlightBookingForm() {
-  const [tripType, setTripType] = useState("roundTrip");
-  const [passengerCount, setPassengerCount] = useState<number>(1);
-  const [cabinClass, setCabinClass] = useState("economy");
-  const [departDate, setDepartDate] = useState<Date | undefined>(undefined);
-  const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
+  const form = useForm<z.infer<typeof flightBookingSchema>>({
+    resolver: zodResolver(flightBookingSchema),
+    defaultValues: {
+      tripType: "roundTrip",
+      origin: "",
+      destination: "",
+      departDate: undefined,
+      returnDate: undefined,
+      passengers: 1,
+      cabinClass: "economy",
+    },
+    mode: "onChange",
+  });
+
+  const tripType = form.watch("tripType");
+  const departDate = form.watch("departDate");
+
+  const onSubmit = (data: z.infer<typeof flightBookingSchema>) => {
+    console.log("Form submitted with data:", data);
+    alert(JSON.stringify(data, null, 2));
+  };
 
   return (
     <div className="bg-white min-h-[300px] w-full mx-auto max-w-[1200px] rounded-t-4xl rounded-b-2xl shadow-xl p-8">
-      <div className="flex justify-center mb-6 space-x-4">
-        <Button
-          variant={tripType === "roundTrip" ? "default" : "secondary"}
-          className={cn(
-            "px-6 py-2 rounded-full text-sm font-semibold",
-            tripType === "roundTrip"
-              ? "bg-red-800 hover:bg-red-700 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          )}
-          onClick={() => setTripType("roundTrip")}
-        >
-          Round Trip
-        </Button>
-        <Button
-          variant={tripType === "oneWay" ? "default" : "secondary"}
-          className={cn(
-            "px-6 py-2 rounded-full text-sm font-semibold",
-            tripType === "oneWay"
-              ? "bg-red-800 hover:bg-red-700 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          )}
-          onClick={() => setTripType("oneWay")}
-        >
-          One Way
-        </Button>
-        <Button
-          variant={tripType === "multiCity" ? "default" : "secondary"}
-          className={cn(
-            "px-6 py-2 rounded-full text-sm font-semibold",
-            tripType === "multiCity"
-              ? "bg-red-800 hover:bg-red-700 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          )}
-          onClick={() => setTripType("multiCity")}
-        >
-          Multi City
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* From Input */}
-        <div className="space-y-1">
-          <Label htmlFor="origin">From</Label>
-          <Input id="origin" placeholder="e.g., London (LHR)" />
-          {/* You can add an icon inside the Input component or as an adornment */}
-        </div>
-
-        {/* To Input */}
-        <div className="space-y-1">
-          <Label htmlFor="destination">To</Label>
-          <Input id="destination" placeholder="e.g., Doha (DOH)" />
-        </div>
-
-        {/* Depart Date Input */}
-        <div className="space-y-1">
-          <Label htmlFor="departDate">Depart</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !departDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {departDate ? (
-                  format(departDate, "PPP")
-                ) : (
-                  <span>Pick a date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={departDate}
-                onSelect={setDepartDate}
-                initialFocus
-                // Disable dates before today
-                disabled={(date) =>
-                  date < new Date(new Date().setHours(0, 0, 0, 0))
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="flex justify-center mb-6 space-x-4">
+          {/* Trip Type Buttons */}
+          {["roundTrip", "oneWay", "multiCity"].map((type) => (
+            <Button
+              key={type}
+              variant={tripType === type ? "default" : "secondary"}
+              className={cn(
+                "px-6 py-2 rounded-full text-sm font-semibold",
+                tripType === type
+                  ? "bg-red-800 hover:bg-red-700 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              )}
+              onClick={() => {
+                form.setValue(
+                  "tripType",
+                  type as "roundTrip" | "oneWay" | "multiCity",
+                  { shouldValidate: true }
+                );
+                if (type !== "roundTrip") {
+                  form.setValue("returnDate", undefined, {
+                    shouldValidate: true,
+                  });
                 }
-              />
-            </PopoverContent>
-          </Popover>
+              }}
+              type="button"
+            >
+              {type === "roundTrip" && "Round Trip"}
+              {type === "oneWay" && "One Way"}
+              {type === "multiCity" && "Multi City"}
+            </Button>
+          ))}
         </div>
 
-        {/* Return Date Input (conditionally rendered for Round Trip) */}
-        {tripType === "roundTrip" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* From Input */}
           <div className="space-y-1">
-            <Label htmlFor="returnDate">Return</Label>
+            <Label htmlFor="origin">From</Label>
+            <Input
+              id="origin"
+              placeholder="e.g., London (LHR)"
+              {...form.register("origin")}
+            />
+            {form.formState.errors.origin && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.origin.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="destination">To</Label>
+            <Input
+              id="destination"
+              placeholder="e.g., Doha (DOH)"
+              {...form.register("destination")}
+            />
+            {form.formState.errors.destination && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.destination.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="departDate">Depart</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !returnDate && "text-muted-foreground"
+                    !departDate && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {returnDate ? (
-                    format(returnDate, "PPP")
+                  {departDate ? (
+                    format(departDate, "PPP")
                   ) : (
                     <span>Pick a date</span>
                   )}
@@ -142,86 +132,177 @@ export function FlightBookingForm() {
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={returnDate}
-                  onSelect={setReturnDate}
+                  selected={departDate}
+                  onSelect={(date) => {
+                    form.setValue("departDate", date!, {
+                      shouldValidate: true,
+                    });
+                    if (
+                      date &&
+                      form.watch("returnDate") &&
+                      date > form.watch("returnDate")!
+                    ) {
+                      form.setValue("returnDate", undefined, {
+                        shouldValidate: true,
+                      });
+                    }
+                  }}
                   initialFocus
-                  // Disable dates before depart date if set, otherwise before today
-                  disabled={(date) =>
-                    departDate
-                      ? date < new Date(departDate.setHours(0, 0, 0, 0))
-                      : date < new Date(new Date().setHours(0, 0, 0, 0))
+                  disabled={
+                    (date) => date < new Date(new Date().setHours(0, 0, 0, 0)) // Disable dates before today
                   }
                 />
               </PopoverContent>
             </Popover>
+            {form.formState.errors.departDate && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.departDate.message}
+              </p>
+            )}
           </div>
-        )}
 
-        {/* Passenger Input */}
-        <div
-          className={cn(
-            "space-y-1",
-            tripType === "oneWay" && "md:col-span-2" // Occupy 2 columns for one-way
+          {tripType === "roundTrip" && (
+            <div className="space-y-1">
+              <Label htmlFor="returnDate">Return</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !form.watch("returnDate") && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {form.watch("returnDate") ? (
+                      format(form.watch("returnDate")!, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={form.watch("returnDate")}
+                    onSelect={(date) =>
+                      form.setValue("returnDate", date!, {
+                        shouldValidate: true,
+                      })
+                    }
+                    initialFocus
+                    disabled={(date) =>
+                      departDate
+                        ? date < new Date(departDate.setHours(0, 0, 0, 0))
+                        : date < new Date(new Date().setHours(0, 0, 0, 0))
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
+              {form.formState.errors.returnDate && (
+                <p className="text-red-500 text-sm">
+                  {form.formState.errors.returnDate.message}
+                </p>
+              )}
+            </div>
           )}
-        >
-          <Label htmlFor="passengers">Passengers</Label>
-          <Select
-            value={passengerCount.toString()}
-            onValueChange={(value) => setPassengerCount(Number(value))}
+
+          <div
+            className={cn(
+              "space-y-1",
+              tripType === "oneWay" ? "md:col-span-2" : ""
+            )}
           >
-            <SelectTrigger id="passengers">
-              <SelectValue placeholder="Select number of passengers" />
-            </SelectTrigger>
-            <SelectContent>
-              {[...Array(9)].map((_, i) => (
-                <SelectItem key={i + 1} value={(i + 1).toString()}>
-                  {i + 1} Passenger{i + 1 > 1 ? "s" : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Label htmlFor="passengers">Passengers</Label>
+            <Select
+              value={form.watch("passengers").toString()}
+              onValueChange={(value) =>
+                form.setValue("passengers", Number(value), {
+                  shouldValidate: true,
+                })
+              }
+            >
+              <SelectTrigger id="passengers">
+                <SelectValue placeholder="Select number of passengers" />
+              </SelectTrigger>
+              <SelectContent>
+                {[...Array(9)].map((_, i) => (
+                  <SelectItem key={i + 1} value={(i + 1).toString()}>
+                    {i + 1} Passenger{i + 1 > 1 ? "s" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {form.formState.errors.passengers && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.passengers.message}
+              </p>
+            )}
+          </div>
+
+          {/* Cabin Class Input */}
+          <div className="space-y-1">
+            <Label htmlFor="cabinClass">Cabin Class</Label>
+            <Select
+              value={form.watch("cabinClass")}
+              onValueChange={(value) =>
+                form.setValue(
+                  "cabinClass",
+                  value as "economy" | "premiumEconomy" | "business" | "first",
+                  { shouldValidate: true }
+                )
+              }
+            >
+              <SelectTrigger id="cabinClass">
+                <SelectValue placeholder="Select cabin class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="economy">Economy</SelectItem>
+                <SelectItem value="premiumEconomy">Premium Economy</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="first">First</SelectItem>
+              </SelectContent>
+            </Select>
+            {form.formState.errors.cabinClass && (
+              <p className="text-red-500 text-sm">
+                {form.formState.errors.cabinClass.message}
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Cabin Class Input */}
-        <div className="space-y-1">
-          <Label htmlFor="cabinClass">Cabin Class</Label>
-          <Select
-            value={cabinClass}
-            onValueChange={(value) => setCabinClass(value)}
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+          <Button
+            variant="link"
+            className="text-red-800 hover:text-red-700"
+            type="button"
           >
-            <SelectTrigger id="cabinClass">
-              <SelectValue placeholder="Select cabin class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="economy">Economy</SelectItem>
-              <SelectItem value="premiumEconomy">Premium Economy</SelectItem>
-              <SelectItem value="business">Business</SelectItem>
-              <SelectItem value="first">First</SelectItem>
-            </SelectContent>
-          </Select>
+            Special offers
+          </Button>
+          <Button
+            variant="link"
+            className="text-red-800 hover:text-red-700"
+            type="button"
+          >
+            Manage Booking
+          </Button>
+          <Button
+            variant="link"
+            className="text-red-800 hover:text-red-700"
+            type="button"
+          >
+            Flight Status
+          </Button>
+          <Button
+            type="submit"
+            className="bg-red-800 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-red-700 transition-colors duration-300 shadow-lg"
+          >
+            Search Flights
+          </Button>
         </div>
-      </div>
+      </form>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
-        <Button variant="link" className="text-red-800 hover:text-red-700">
-          Special offers
-        </Button>
-        <Button variant="link" className="text-red-800 hover:text-red-700">
-          Manage Booking
-        </Button>
-        <Button variant="link" className="text-red-800 hover:text-red-700">
-          Flight Status
-        </Button>
-        <Button
-          type="submit" // Consider wrapping this in a <form> tag
-          className="bg-red-800 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-red-700 transition-colors duration-300 shadow-lg"
-        >
-          Search Flights
-        </Button>
-      </div>
-
-      {/* Additional links/info */}
       <div className="mt-8 text-center text-gray-500 text-sm">
         <p>
           For assistance, please call{" "}
