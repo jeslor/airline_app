@@ -1,5 +1,5 @@
 // components/FlightBookingForm.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 
 export function FlightBookingForm() {
   const [tripType, setTripType] = useState("roundTrip");

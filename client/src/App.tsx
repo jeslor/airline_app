@@ -3,7 +3,7 @@ import GlobeWrapper from "./components/Globe/GlobeWrapper";
 
 const App = () => {
   return (
-    <div className="">
+    <div className="w-full">
       <GlobeWrapper />
       <div className="bg-slate-200 flex flex-col items-center">
         <div className="bg-white min-h-[300px] w-full mx-4 max-w-[1200px] max-auto -top-[200px] relative z-[3] rounded-t-4xl rounded-b-2xl">

@@ -541,7 +541,8 @@ export default function GlobeWithMultiplePlanes() {
       <OrbitControls
         ref={orbitControlsRef} // Assign the ref here
         enablePan={false}
-        enableZoom={false}
+        // enableZoom={false} // This was disabling zoom, so we need to change it
+        enableZoom={true} // Enable zoom functionality
         minDistance={GLOBE_RADIUS * 1.5} // Prevent camera from going too close
         maxDistance={GLOBE_RADIUS * 4} // Prevent camera from going too far
         // dampingFactor={0.05} // Adjust for smoother rotation stop
