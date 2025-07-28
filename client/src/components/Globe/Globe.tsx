@@ -239,10 +239,9 @@ function Earth({ children, orbitControlsRef }: EarthProps) {
     }
   }, [orbitControlsRef]); // Depend on orbitControlsRef
 
-  useFrame((delta: any) => {
+  useFrame((_, delta) => {
     if (meshRef.current) {
       if (isInteracting) {
-        // If user is interacting, stop the automatic rotation
         return;
       }
 
