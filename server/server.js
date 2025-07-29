@@ -12,6 +12,8 @@ app.get("/", (req, res) => {
   res.send("Welcome to the server! Use /api for API endpoints.");
 });
 
+app.use("/api", require("./routes/api"));
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
