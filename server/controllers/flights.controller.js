@@ -1,14 +1,8 @@
 const asyncWrapper = require("../utils/asyncWrapper");
 const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
 
 const getFlights = asyncWrapper(async (req, res) => {
   try {
-    const flights = await prisma.flight.findMany({
-      orderBy: {
-        departureTime: "asc",
-      },
-    });
     if (!flights || flights.length === 0) {
       return res.status(404).json({ message: "No flights found" });
     }
