@@ -40,9 +40,29 @@ export function FlightBookingForm() {
   const tripType = form.watch("tripType");
   const departDate = form.watch("departDate");
 
-  const onSubmit = (data: z.infer<typeof flightBookingSchema>) => {
-    console.log("Form submitted with data:", data);
-    alert(JSON.stringify(data, null, 2));
+  const onSubmit = async (data: z.infer<typeof flightBookingSchema>) => {
+    try {
+      const flights = await fetch("http://localhost:3000/api/flights", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!flights.ok) {
+        throw new Error("Failed to fetch flights");
+      }
+
+      const flightsData = await flights.json();
+      if (flightsData.error) {
+        throw new Error(flightsData.error);
+      }
+      console.log("Flights data:", flightsData.result);
+    } catch (error: any) {
+      console.error("Error fetching flights:", error);
+      alert("Failed to fetch flights. Please try again later.");
+    }
   };
 
   return (
