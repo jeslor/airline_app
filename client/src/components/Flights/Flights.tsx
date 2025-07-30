@@ -46,7 +46,10 @@ export function Flights({ flights }: { flights: any[] }) {
                         key={layoverIdx}
                         className="text-xs text-muted-foreground"
                       >
-                        Layover: {layover.airport} ({layover.duration})
+                        Layover: {layover.airport} ({layover.duration}) in{" "}
+                        <span className="text-gray-950 font-bold">
+                          {layover.city}
+                        </span>
                       </p>
                     ))}
                   </div>
