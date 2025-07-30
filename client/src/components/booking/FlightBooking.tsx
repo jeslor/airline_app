@@ -22,9 +22,13 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { flightBookingSchema } from "@/schemas/FlightBookingSchema";
 import { useFlightContext } from "../providers/FlightProvider";
+import { useState } from "react";
 
 export function FlightBookingForm() {
   const { setFlightData } = useFlightContext();
+  const [open, setOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
+
   const form = useForm<z.infer<typeof flightBookingSchema>>({
     resolver: zodResolver(flightBookingSchema),
     defaultValues: {
@@ -60,8 +64,10 @@ export function FlightBookingForm() {
       if (flightsData.error) {
         throw new Error(flightsData.error);
       }
-      // Update flight data in context
-      setFlightData(flightsData.result);
+
+      console.log(typeof flightsData, flightsData);
+
+      setFlightData([]);
     } catch (error: any) {
       console.error("Error fetching flights:", error);
       alert("Failed to fetch flights. Please try again later.");
@@ -72,7 +78,6 @@ export function FlightBookingForm() {
     <div className="bg-white min-h-[300px] w-full mx-auto max-w-[1200px] rounded-t-4xl rounded-b-2xl shadow-xl p-8">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="flex justify-center mb-6 space-x-4">
-          {/* Trip Type Buttons */}
           {["roundTrip", "oneWay", "multiCity"].map((type) => (
             <Button
               key={type}
@@ -105,7 +110,6 @@ export function FlightBookingForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* From Input */}
           <div className="space-y-1">
             <Label htmlFor="origin">From</Label>
             <Input
@@ -133,12 +137,13 @@ export function FlightBookingForm() {
               </p>
             )}
           </div>
+
           <div className="space-y-1">
             <Label htmlFor="departDate">Depart</Label>
-            <Popover>
+            <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
-                  variant={"outline"}
+                  variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
                     !departDate && "text-muted-foreground"
@@ -157,11 +162,11 @@ export function FlightBookingForm() {
                   mode="single"
                   selected={departDate}
                   onSelect={(date) => {
-                    form.setValue("departDate", date!, {
+                    if (!date) return;
+                    form.setValue("departDate", date, {
                       shouldValidate: true,
                     });
                     if (
-                      date &&
                       form.watch("returnDate") &&
                       date > form.watch("returnDate")!
                     ) {
@@ -169,10 +174,11 @@ export function FlightBookingForm() {
                         shouldValidate: true,
                       });
                     }
+                    setOpen(false); // Close depart date popover
                   }}
                   initialFocus
-                  disabled={
-                    (date) => date < new Date(new Date().setHours(0, 0, 0, 0)) // Disable dates before today
+                  disabled={(date) =>
+                    date < new Date(new Date().setHours(0, 0, 0, 0))
                   }
                 />
               </PopoverContent>
@@ -187,10 +193,10 @@ export function FlightBookingForm() {
           {tripType === "roundTrip" && (
             <div className="space-y-1">
               <Label htmlFor="returnDate">Return</Label>
-              <Popover>
+              <Popover open={returnOpen} onOpenChange={setReturnOpen}>
                 <PopoverTrigger asChild>
                   <Button
-                    variant={"outline"}
+                    variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
                       !form.watch("returnDate") && "text-muted-foreground"
@@ -208,11 +214,13 @@ export function FlightBookingForm() {
                   <Calendar
                     mode="single"
                     selected={form.watch("returnDate")}
-                    onSelect={(date) =>
-                      form.setValue("returnDate", date!, {
+                    onSelect={(date) => {
+                      if (!date) return;
+                      form.setValue("returnDate", date, {
                         shouldValidate: true,
-                      })
-                    }
+                      });
+                      setReturnOpen(false); // Close return date popover
+                    }}
                     initialFocus
                     disabled={(date) =>
                       departDate
@@ -263,7 +271,6 @@ export function FlightBookingForm() {
             )}
           </div>
 
-          {/* Cabin Class Input */}
           <div className="space-y-1">
             <Label htmlFor="cabinClass">Cabin Class</Label>
             <Select
@@ -294,27 +301,14 @@ export function FlightBookingForm() {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
-          <Button
-            variant="link"
-            className="text-red-800 hover:text-red-700"
-            type="button"
-          >
+          <Button variant="link" className="text-red-800 hover:text-red-700">
             Special offers
           </Button>
-          <Button
-            variant="link"
-            className="text-red-800 hover:text-red-700"
-            type="button"
-          >
+          <Button variant="link" className="text-red-800 hover:text-red-700">
             Manage Booking
           </Button>
-          <Button
-            variant="link"
-            className="text-red-800 hover:text-red-700"
-            type="button"
-          >
+          <Button variant="link" className="text-red-800 hover:text-red-700">
             Flight Status
           </Button>
           <Button
