@@ -14,7 +14,7 @@ const App = () => {
         <div className="w-full relative mt-[-170px] ">
           <AvailableFlights />
         </div>
-        <div className="text-center mt-10 mb-6">
+        <div className="text-center mt-18 mb-6">
           <h1 className="text-2xl font-bold">Airline App</h1>
           <p className="mt-2">Explore the world with our interactive globe.</p>
         </div>
