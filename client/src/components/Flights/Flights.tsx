@@ -1,28 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "../ui/card";
-import { useFlightContext } from "../providers/FlightProvider";
-import { useEffect, useState } from "react";
 
-export function FlightResults() {
-  const { flightData } = useFlightContext();
-  const [flights, setFlights] = useState<any[]>([]);
-
-  console.log("Flight data from context:", typeof flightData, flightData);
-
-  useEffect(() => {
-    if (flightData && flightData.length > 0) {
-      setFlights(flightData);
-    } else {
-      setFlights([]);
-    }
-  }, [flightData.length]);
-
-  if (!flightData || flightData.length === 0) {
+export function Flights({ flights }: { flights: any[] }) {
+  if (!flights || flights.length === 0) {
     return <p className="text-center text-gray-500">No flights found.</p>;
   }
 
   return (
-    <div className="w-full max-w-[1380px] mx-auto mt-10 space-y-6 px-4 sm:px-6 lg:px-8">
+    <div className="w-full ">
       {flights.length &&
         flights.map((flight, idx) => (
           <Card key={idx} className="p-6 shadow-lg border rounded-2xl">
@@ -50,13 +35,13 @@ export function FlightResults() {
               {/* Center: duration and layover */}
               <div className="text-center">
                 <p className="text-sm font-semibold">{flight.duration}</p>
-                {flight.layovers ? (
+                {typeof flight.layovers === "string" ? (
+                  <p className="text-xs text-muted-foreground">Non-stop</p>
+                ) : (
                   <p className="text-xs text-muted-foreground">
                     Layover: {flight.layovers.airport} (
                     {flight.layovers.duration})
                   </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Non-stop</p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
                   Aircraft: {flight.aircraft}

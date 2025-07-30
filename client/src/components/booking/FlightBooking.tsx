@@ -65,6 +65,11 @@ export function FlightBookingForm() {
         throw new Error(flightsData.error);
       }
 
+      // check if there are some flights in localStorage
+      if (localStorage.getItem("flightData")) {
+        localStorage.removeItem("flightData");
+      }
+
       localStorage.setItem(
         "flightData",
         JSON.stringify(flightsData.flights || [])

@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 import { createContext, useContext, useState } from "react";
 
 interface FlightContextType {
-  flightData: any[];
+  flightData: {
+    outgoing: any[];
+    return: any[];
+  };
   setFlightData: (data: any) => void;
 }
 const FlightContext = createContext<FlightContextType | undefined>(undefined);
@@ -11,7 +14,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
   const [flightData, setFlightData] = useState<any>(
     localStorage.getItem("flightData")
       ? JSON.parse(localStorage.getItem("flightData")!)
-      : []
+      : {}
   );
 
   return (

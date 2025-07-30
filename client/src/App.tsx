@@ -1,5 +1,6 @@
 import { FlightBookingForm } from "./components/Booking/FlightBooking";
-import { FlightResults } from "./components/Flights/Flights";
+import AvailableFlights from "./components/Flights/AvailableFlights";
+
 import GlobeWrapper from "./components/Globe/GlobeWrapper";
 
 const App = () => {
@@ -11,7 +12,7 @@ const App = () => {
           <FlightBookingForm />
         </div>
         <div className="w-full relative mt-[-170px] ">
-          <FlightResults />
+          <AvailableFlights />
         </div>
         <div className="text-center mt-10 mb-6">
           <h1 className="text-2xl font-bold">Airline App</h1>
