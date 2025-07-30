@@ -4,12 +4,15 @@ import { Flights } from "./Flights";
 
 const AvailableFlights = () => {
   const { flightData } = useFlightContext();
-  const [allFlights, setAllFlights] = useState<any>({});
+  const [allFlights, setAllFlights] = useState<any>({
+    outboundFlights: [],
+    returnFlights: [],
+  });
 
   useEffect(() => {
     if (
-      (flightData.outgoing && flightData.outgoing.length > 0) ||
-      (flightData.return && flightData.return.length > 0)
+      (flightData.outboundFlights && flightData.outboundFlights.length > 0) ||
+      (flightData.returnFlights && flightData.returnFlights.length > 0)
     ) {
       setAllFlights(flightData);
     } else {
@@ -20,11 +23,11 @@ const AvailableFlights = () => {
     <div className="max-w-[1380px] mx-auto mt-10 space-y-6 px-4 sm:px-6 lg:px-8 w-full">
       <div className="pb-6">
         <h3 className="text-[40px]">Outgoing flight</h3>
-        <Flights flights={allFlights.outgoing} />
+        <Flights flights={allFlights.outboundFlights} />
       </div>
       <div className="pb-6">
         <h3 className="text-[40px]">Return flight</h3>
-        <Flights flights={allFlights.return} />
+        <Flights flights={allFlights.returnFlights} />
       </div>
     </div>
   );

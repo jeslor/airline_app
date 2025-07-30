@@ -3,8 +3,8 @@ import { createContext, useContext, useState } from "react";
 
 interface FlightContextType {
   flightData: {
-    outgoing: any[];
-    return: any[];
+    outboundFlights: any[];
+    returnFlights: any[];
   };
   setFlightData: (data: any) => void;
 }
