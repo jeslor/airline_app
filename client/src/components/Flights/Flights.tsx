@@ -6,8 +6,10 @@ export function Flights({ flights }: { flights: any[] }) {
     return <p className="text-center text-gray-500">No flights found.</p>;
   }
 
+  console.log("Flights data:", flights);
+
   return (
-    <div className="w-full ">
+    <div className="w-full flex flex-col gap-4">
       {flights.length &&
         flights.map((flight, idx) => (
           <Card key={idx} className="p-6 shadow-lg border rounded-2xl">
@@ -35,24 +37,37 @@ export function Flights({ flights }: { flights: any[] }) {
               {/* Center: duration and layover */}
               <div className="text-center">
                 <p className="text-sm font-semibold">{flight.duration}</p>
-                {typeof flight.layovers === "string" ? (
+                {!flight.layovers.length ? (
                   <p className="text-xs text-muted-foreground">Non-stop</p>
                 ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Layover: {flight.layovers.airport} (
-                    {flight.layovers.duration})
+                  <div>
+                    {flight.layovers.map((layover: any, layoverIdx: number) => (
+                      <p
+                        key={layoverIdx}
+                        className="text-xs text-muted-foreground"
+                      >
+                        Layover: {layover.airport} ({layover.duration})
+                      </p>
+                    ))}
+                  </div>
+                )}
+                {flight.aircraft && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Aircraft: {flight.aircraft}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  Aircraft: {flight.aircraft}
-                </p>
               </div>
 
               {/* Right side: Book button */}
-              <div className="w-full sm:w-auto">
+              <div className="w-full sm:w-auto flex flex-col items-start justify-center sm:items-end gap-2">
                 <Button className="bg-red-800 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto">
                   Book Now
                 </Button>
+                <h4 className="text-right text-gray-800 flex items-center gap-2 justify-start w-full pl-3">
+                  <span className="text-lg font-semibold">
+                    ${flight.price.toFixed(2)}
+                  </span>
+                </h4>
               </div>
             </CardContent>
           </Card>

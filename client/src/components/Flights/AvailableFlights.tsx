@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useFlightContext } from "../providers/FlightProvider";
 import { Flights } from "./Flights";
 
