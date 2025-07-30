@@ -8,7 +8,11 @@ interface FlightContextType {
 const FlightContext = createContext<FlightContextType | undefined>(undefined);
 
 export const FlightProvider = ({ children }: { children: ReactNode }) => {
-  const [flightData, setFlightData] = useState<any>([]);
+  const [flightData, setFlightData] = useState<any>(
+    localStorage.getItem("flightData")
+      ? JSON.parse(localStorage.getItem("flightData")!)
+      : []
+  );
 
   return (
     <FlightContext.Provider value={{ flightData, setFlightData }}>

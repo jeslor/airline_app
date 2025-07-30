@@ -21,27 +21,12 @@ export function FlightResults() {
     return <p className="text-center text-gray-500">No flights found.</p>;
   }
 
-  console.log(
-    "Flights data:",
-    flights.map((flight) => ({
-      flightNumber: flight.flightNumber,
-      airline: flight.airline,
-      departure: flight.departure,
-      arrival: flight.arrival,
-      duration: flight.duration,
-      layovers: flight.layovers,
-      aircraft: flight.aircraft,
-    }))
-  );
-  console.log("Flight data length:", flights.length);
-
   return (
-    <div className="w-full max-w-6xl mx-auto mt-10 space-y-6">
+    <div className="w-full max-w-[1380px] mx-auto mt-10 space-y-6 px-4 sm:px-6 lg:px-8">
       {flights.length &&
         flights.map((flight, idx) => (
           <Card key={idx} className="p-6 shadow-lg border rounded-2xl">
             <CardContent className="flex flex-col lg:flex-row justify-between items-center gap-4">
-              {/* Left side: airline and flight info */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
                 <div className="text-left">
                   <p className="text-lg font-semibold">{flight.airline}</p>

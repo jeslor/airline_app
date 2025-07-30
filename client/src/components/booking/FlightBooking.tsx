@@ -65,9 +65,12 @@ export function FlightBookingForm() {
         throw new Error(flightsData.error);
       }
 
-      console.log(typeof flightsData, flightsData);
+      localStorage.setItem(
+        "flightData",
+        JSON.stringify(flightsData.flights || [])
+      );
 
-      setFlightData([]);
+      setFlightData(flightsData.flights || []);
     } catch (error: any) {
       console.error("Error fetching flights:", error);
       alert("Failed to fetch flights. Please try again later.");

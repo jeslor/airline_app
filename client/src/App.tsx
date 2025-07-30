@@ -10,11 +10,13 @@ const App = () => {
         <div className="bg-white min-h-[300px] w-full mx-4 max-w-[1200px] max-auto -top-[200px] relative z-[3] rounded-t-4xl rounded-b-2xl">
           <FlightBookingForm />
         </div>
-        <div>
+        <div className="w-full relative mt-[-170px] ">
           <FlightResults />
         </div>
-        <h1 className="text-2xl font-bold">Airline App</h1>
-        <p className="mt-2">Explore the world with our interactive globe.</p>
+        <div className="text-center mt-10 mb-6">
+          <h1 className="text-2xl font-bold">Airline App</h1>
+          <p className="mt-2">Explore the world with our interactive globe.</p>
+        </div>
       </div>
     </div>
   );
