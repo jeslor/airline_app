@@ -4,8 +4,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleGenerativeAIStream, streamToResponse } from "ai";
+import flightsRoutes from "./routes/flights.routes.js";
+import asyncWrapper from "./utils/asyncWrapper.js";
 
+dotenv.config("./server.env");
 const app = express();
 const port = process.env.PORT || 3000;
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
@@ -18,20 +20,18 @@ const __dirname = path.dirname(__filename);
 // Static folder
 app.use(express.static(path.join(__dirname, "public")));
 
-const asyncWrapper = require("./utils/asyncWrapper");
-const flightsRoutes = require("./routes/flights.routes");
-
 app.get(
   "/",
   asyncWrapper(async (req, res) => {
-    const result = streamText({
-      model: OpenAI("gpt-4o"),
-      prompt: "Invent a new holiday and describe its traditions.",
-    });
+    try {
+      const { prompt } = req.body;
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-    console.log(result);
-
-    result.pipeDataStreamToResponse(res);
+      res.json({ result: text });
+    } catch (error) {}
   })
 );
 

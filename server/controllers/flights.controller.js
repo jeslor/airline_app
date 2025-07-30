@@ -1,19 +1,8 @@
-const asyncWrapper = require("../utils/asyncWrapper");
-const { openai } = require("@ai-sdk/openai");
-const { streamText } = require("ai");
+import express from "express";
+import asyncWrapper from "../utils/asyncWrapper.js";
 
 const getFlights = asyncWrapper(async (req, res) => {
   try {
-    const result = await streamText({
-      model: openai("gpt-4o"),
-      prompt: "Invent a new holiday and describe its traditions.",
-    });
-
-    result.pipeDataStreamToResponse(res);
-
-    if (!flights || flights.length === 0) {
-      return res.status(404).json({ message: "No flights found" });
-    }
     return res.status(200).json(flights);
   } catch (error) {
     console.error("Error fetching flights:", error);
@@ -21,6 +10,4 @@ const getFlights = asyncWrapper(async (req, res) => {
   }
 });
 
-module.exports = {
-  getFlights,
-};
+export { getFlights };
