@@ -1,15 +1,22 @@
-const express = require("express"),
-  bodyParser = require("body-parser"),
-  path = require("path"),
-  app = express(),
-  port = process.env.PORT || 3000;
+import express from "express";
+import bodyParser from "body-parser";
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAIStream, streamToResponse } from "ai";
+
+const app = express();
+const port = process.env.PORT || 3000;
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const { streamText } = require("ai");
-const { openai } = require("@ai-sdk/openai");
+// Static folder
+app.use(express.static(path.join(__dirname, "public")));
 
 const asyncWrapper = require("./utils/asyncWrapper");
 const flightsRoutes = require("./routes/flights.routes");
@@ -18,7 +25,7 @@ app.get(
   "/",
   asyncWrapper(async (req, res) => {
     const result = streamText({
-      model: openai("gpt-4o"),
+      model: OpenAI("gpt-4o"),
       prompt: "Invent a new holiday and describe its traditions.",
     });
 
