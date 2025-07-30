@@ -1,8 +1,16 @@
 const asyncWrapper = require("../utils/asyncWrapper");
-const { PrismaClient } = require("@prisma/client");
+const { openai } = require("@ai-sdk/openai");
+const { streamText } = require("ai");
 
 const getFlights = asyncWrapper(async (req, res) => {
   try {
+    const result = await streamText({
+      model: openai("gpt-4o"),
+      prompt: "Invent a new holiday and describe its traditions.",
+    });
+
+    result.pipeDataStreamToResponse(res);
+
     if (!flights || flights.length === 0) {
       return res.status(404).json({ message: "No flights found" });
     }
