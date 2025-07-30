@@ -10,6 +10,8 @@ const FlightContext = createContext<FlightContextType | undefined>(undefined);
 export const FlightProvider = ({ children }: { children: ReactNode }) => {
   const [flightData, setFlightData] = useState<any>(null);
 
+  console.log("FlightProvider initialized with flightData:", flightData);
+
   return (
     <FlightContext.Provider value={{ flightData, setFlightData }}>
       {children}

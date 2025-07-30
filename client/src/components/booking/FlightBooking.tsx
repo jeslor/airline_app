@@ -21,8 +21,10 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { flightBookingSchema } from "@/schemas/FlightBookingSchema";
+import { useFlightContext } from "../providers/FlightProvider";
 
 export function FlightBookingForm() {
+  const { setFlightData } = useFlightContext();
   const form = useForm<z.infer<typeof flightBookingSchema>>({
     resolver: zodResolver(flightBookingSchema),
     defaultValues: {
@@ -58,7 +60,8 @@ export function FlightBookingForm() {
       if (flightsData.error) {
         throw new Error(flightsData.error);
       }
-      console.log("Flights data:", flightsData.result);
+      // Update flight data in context
+      setFlightData(flightsData.result);
     } catch (error: any) {
       console.error("Error fetching flights:", error);
       alert("Failed to fetch flights. Please try again later.");
