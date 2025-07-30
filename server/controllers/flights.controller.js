@@ -1,7 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+import genAI from "../configs/GoogleAIService.js";
 
 const getFlights = asyncWrapper(async (req, res) => {
   try {
@@ -29,7 +28,7 @@ const getFlights = asyncWrapper(async (req, res) => {
 
     console.log("Generated text:", cleanAIJsonResponse(text));
 
-    res.json({ result: cleanAIJsonResponse(text) });
+    res.status(200).json({ result: cleanAIJsonResponse(text) });
   } catch (error) {
     console.error("Error in / route:", error);
     res.status(500).json({ message: "Internal server error" });
