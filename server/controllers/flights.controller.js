@@ -10,8 +10,11 @@ const getFlights = asyncWrapper(async (req, res) => {
     }
 
     const prompt = `
- You are a special travel agent, search the web for the best flights available  from Frankfurt to NewYork on 3rd July 2025  and return the best options.
+ You are a special travel agent, search the web for the best flights available  from ${body.origin} to ${body.destination} on ${body.departDate}  and ${body.returnDate} the best options.
+ - make sure the data you return is an object with the following properties:
+ {outboundFlights: [], returnFlights: []}
     -Make sure to include the flight number, departure and arrival times, and the airline.
+    -Include the price for each flight option.
     -Make sure you return atleast 7 options.
     - make sure you arrange the information for example Departure , arrival and any layovers in individual properties.
     -This information is going to be used to generate a demo flight ticket so include the dates and times in a human-readable format, plus other relevant details.
