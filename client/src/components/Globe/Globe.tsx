@@ -712,33 +712,71 @@ function SceneSetup() {
   return null; // This component doesn't render any Three.js objects directly
 }
 
-// Main component rendering the globe and multiple lines
 export default function GlobeWithMultiplePlanes() {
-  // Specify the type for the useRef hook for OrbitControls
   const orbitControlsRef = useRef<OrbitControlsImpl>(null);
+  // State to track if Control/CMD key is pressed
+  const [isControlPressed, setIsControlPressed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Control" || event.metaKey) {
+        // 'metaKey' covers the Command key on Mac
+        setIsControlPressed(true);
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Control" || event.metaKey) {
+        setIsControlPressed(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  // Modify the existing wheel event listener
+  useEffect(() => {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Prevent default scroll behavior only if Control/CMD is NOT pressed
+      // This allows OrbitControls to handle zoom when Control/CMD is pressed.
+      if (!e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Ensure the event listener is added only once
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      canvas.removeEventListener("wheel", handleWheel);
+    };
+  }, []); // Empty dependency array as it only sets up once
 
   return (
-    <Canvas
-      camera={{ position: [0, 2, 6], fov: 60 }}
-      dpr={[1, 2]} // Enable dpr (device pixel ratio) for sharp rendering on high-DPI screens
-    >
-      {/* SceneSetup is now a child of Canvas */}
+    <Canvas camera={{ position: [0, 2, 6], fov: 60 }} dpr={[1, 2]}>
       <SceneSetup />
       <ambientLight intensity={1.5} />
       <directionalLight position={[5, 5, 5]} />
-      {/* Pass the orbitControlsRef down to the Earth component */}
       <Earth orbitControlsRef={orbitControlsRef}>
         <FlightCoordinator />
       </Earth>
       <OrbitControls
-        ref={orbitControlsRef} // Assign the ref here
+        ref={orbitControlsRef}
         enablePan={false}
-        // enableZoom={false} // This was disabling zoom, so we need to change it
-        enableZoom={true} // Enable zoom functionality
-        minDistance={GLOBE_RADIUS * 1.5} // Prevent camera from going too close
-        maxDistance={GLOBE_RADIUS * 4} // Prevent camera from going too far
-        // dampingFactor={0.05} // Adjust for smoother rotation stop
-        // enableDamping={true} // Enable damping for smoother animation when released
+        // Enable zoom only when Control/CMD is pressed
+        enableZoom={isControlPressed}
+        minDistance={GLOBE_RADIUS * 1.5}
+        maxDistance={GLOBE_RADIUS * 4}
       />
     </Canvas>
   );

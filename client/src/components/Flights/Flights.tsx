@@ -37,9 +37,9 @@ export function Flights({ flights }: { flights: any[] }) {
               {/* Center: duration and layover */}
               <div className="text-center">
                 <p className="text-sm font-semibold">{flight.duration}</p>
-                {!flight.layovers.length ? (
-                  <p className="text-xs text-muted-foreground">Non-stop</p>
-                ) : (
+                {flight.layovers &&
+                typeof flight.layovers === "object" &&
+                flight.layovers.length ? (
                   <div>
                     {flight.layovers.map((layover: any, layoverIdx: number) => (
                       <p
@@ -53,6 +53,8 @@ export function Flights({ flights }: { flights: any[] }) {
                       </p>
                     ))}
                   </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Non-stop</p>
                 )}
                 {flight.aircraft && (
                   <p className="text-xs text-muted-foreground mt-1">
