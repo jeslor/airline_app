@@ -6,7 +6,9 @@ interface FlightContextType {
     outboundFlights: any[];
     returnFlights: any[];
   };
+  isSearchingFlights?: boolean;
   setFlightData: (data: any) => void;
+  setIsSearchingFlights?: (isSearching: boolean) => void;
 }
 const FlightContext = createContext<FlightContextType | undefined>(undefined);
 
@@ -17,8 +19,17 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
       : {}
   );
 
+  const [isSearchingFlights, setIsSearchingFlights] = useState<boolean>(false);
+
   return (
-    <FlightContext.Provider value={{ flightData, setFlightData }}>
+    <FlightContext.Provider
+      value={{
+        flightData,
+        setFlightData,
+        isSearchingFlights,
+        setIsSearchingFlights,
+      }}
+    >
       {children}
     </FlightContext.Provider>
   );
