@@ -49,7 +49,7 @@ export function Flights({ flights }: { flights: any[] }) {
                   Your flight
                   <span className="">
                     {" "}
-                    from{flight.departure.city} to {flight.arrival.city}
+                    from {flight.departure.city} to {flight.arrival.city}
                   </span>
                 </p>
                 <p className="text-sm font-semibold">{flight.duration}</p>
