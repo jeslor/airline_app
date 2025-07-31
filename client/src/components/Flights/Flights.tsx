@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "../ui/card";
+import { format } from "date-fns";
 
 export function Flights({ flights }: { flights: any[] }) {
   if (!flights || flights.length === 0) {
@@ -25,6 +26,12 @@ export function Flights({ flights }: { flights: any[] }) {
                 <div className="hidden sm:block h-8 border-l border-gray-300 mx-4" />
 
                 <div className="text-left">
+                  <p>
+                    <span className="text-[12px] font-regular text-gray-400">
+                      {format(flight.departure.date, "PPP")} to{" "}
+                      {format(flight.arrival.date, "PPP")}
+                    </span>
+                  </p>
                   <p className="text-md font-medium">
                     {flight.departure.time} – {flight.arrival.time}
                   </p>
@@ -36,16 +43,21 @@ export function Flights({ flights }: { flights: any[] }) {
 
               {/* Center: duration and layover */}
               <div className="text-center">
+                <p className="text-[12px] font-regular text-gray-400 mb-3">
+                  {" "}
+                  Your flight
+                  <span className="">
+                    {" "}
+                    from{flight.departure.city} to {flight.arrival.city}
+                  </span>
+                </p>
                 <p className="text-sm font-semibold">{flight.duration}</p>
                 {flight.layovers &&
                 typeof flight.layovers === "object" &&
                 flight.layovers.length ? (
-                  <div>
+                  <div className="text-sm font-semibold">
                     {flight.layovers.map((layover: any, layoverIdx: number) => (
-                      <p
-                        key={layoverIdx}
-                        className="text-xs text-muted-foreground"
-                      >
+                      <p key={layoverIdx} className="">
                         Layover: {layover.airport} ({layover.duration}) in{" "}
                         <span className="text-gray-950 font-bold">
                           {layover.city}
