@@ -17,7 +17,10 @@ const AvailableFlights = () => {
     ) {
       setAllFlights(flightData);
     } else {
-      setAllFlights([]);
+      setAllFlights({
+        outboundFlights: [],
+        returnFlights: [],
+      });
     }
   }, [flightData]);
   return (
@@ -28,21 +31,22 @@ const AvailableFlights = () => {
             <SearchingForFlights />
           </div>
         </div>
-      ) : (
+      ) : allFlights.outboundFlights.length !== 0 &&
+        allFlights.returnFlights.length !== 0 ? (
         <>
           <div className="pb-6">
             <h3 className="text-[36px]">
               Outgoing flights{" "}
               <span className="text-[20px] text-gray-500">
-                from {allFlights.outboundFlights[0]?.departure?.city} to{" "}
-                {allFlights.outboundFlights[0]?.arrival?.city}
+                from {allFlights.outboundFlights[0]?.departureCity} to{" "}
+                {allFlights.outboundFlights[0]?.arrivalCity}
               </span>
               <span className="text-[20px] text-gray-500">
                 {" "}
                 on{" "}
-                {allFlights.outboundFlights[0]?.departure?.date
+                {allFlights.outboundFlights[0]?.departureDate
                   ? new Date(
-                      allFlights.outboundFlights[0].departure.date
+                      allFlights.outboundFlights[0].departureDate
                     ).toLocaleDateString()
                   : "N/A"}
               </span>
@@ -55,15 +59,15 @@ const AvailableFlights = () => {
               Return flights
               <span className="text-[20px] text-gray-500">
                 {" "}
-                from {allFlights.returnFlights[0]?.departure?.city} to{" "}
-                {allFlights.returnFlights[0]?.arrival?.city}
+                from {allFlights.returnFlights[0]?.departureCity} to{" "}
+                {allFlights.returnFlights[0]?.arrivalCity}
               </span>
               <span className="text-[20px] text-gray-500">
                 {" "}
                 on{" "}
-                {allFlights.returnFlights[0]?.departure?.date
+                {allFlights.returnFlights[0]?.departureDate
                   ? new Date(
-                      allFlights.returnFlights[0].departure.date
+                      allFlights.returnFlights[0].departureDate
                     ).toLocaleDateString()
                   : "N/A"}
               </span>
@@ -71,6 +75,13 @@ const AvailableFlights = () => {
             <Flights flights={allFlights.returnFlights} />
           </div>
         </>
+      ) : (
+        <div className="text-center">
+          <h3 className="text-[36px]">No flights available</h3>
+          <p className="text-gray-500">
+            Please try searching with different criteria.
+          </p>
+        </div>
       )}
     </div>
   );

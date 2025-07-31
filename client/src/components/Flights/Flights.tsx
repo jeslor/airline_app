@@ -29,20 +29,18 @@ export function Flights({ flights }: { flights: any[] }) {
                 </div>
 
                 <div className="hidden sm:block h-8 border-l border-gray-300 mx-4" />
-
                 <div className="text-left">
                   <p>
                     <span className="text-[12px] font-regular text-gray-400">
-                      {format(flight.departure.date, "PPP")} to{" "}
-                      {format(flight.arrival.date, "PPP")}
+                      {format(flight.departureDate, "PPP")} to{" "}
+                      {format(flight.arrivalDate, "PPP")}
                     </span>
                   </p>
                   <p className="text-md font-medium">
-                    {flight.departure.time} – {flight.arrival.time}
+                    {flight.departureTime} – {flight.arrivalTime}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {flight.departure.airportCode} →{" "}
-                    {flight.arrival.airportCode}
+                    {flight.departureAirportCode} → {flight.arrivalAirportCode}
                   </p>
                 </div>
               </div>
@@ -54,17 +52,18 @@ export function Flights({ flights }: { flights: any[] }) {
                   Your flight
                   <span className="">
                     {" "}
-                    from {flight.departure.city} to {flight.arrival.city}
+                    from {flight.departureCity} to {flight.arrivalCity}
                   </span>
                 </p>
-                <p className="text-sm font-semibold">{flight.duration}</p>
+                <p className="text-sm font-semibold">{flight.flightDuration}</p>
                 {flight.layovers &&
                 typeof flight.layovers === "object" &&
                 flight.layovers.length ? (
                   <div className="text-sm font-semibold">
                     {flight.layovers.map((layover: any, layoverIdx: number) => (
                       <p key={layoverIdx} className="">
-                        Layover: {layover.airport} ({layover.duration}) in{" "}
+                        Layover: {layover.airportCode} {layover.city} (
+                        {layover.duration}) in{" "}
                         <span className="text-gray-950 font-bold">
                           {layover.city}
                         </span>
