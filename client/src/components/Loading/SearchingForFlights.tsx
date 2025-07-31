@@ -1,19 +1,15 @@
 import { Plane } from "lucide-react"; // Still using lucide-react for the Plane icon
 import { motion } from "framer-motion";
 
-// If you were to use Iconify for the Plane icon:
-// import { Icon } from '@iconify/react';
-// import planeIcon from '@iconify/icons-lucide/plane'; // Or any other plane icon, e.g., 'mdi:plane'
-
 export default function SearchingForFlights(): any {
-  const rotationDuration = 2.3; // Duration for one full circle rotation
+  const rotationDuration = 2.3;
 
   const containerVariants = {
     animate: {
-      rotate: 360, // Rotate the entire container to create the circular path effect
+      rotate: 360,
       transition: {
         duration: rotationDuration,
-        ease: "linear" as const, // Linear for consistent rotation speed
+        ease: "linear" as const,
         repeat: Infinity,
         repeatType: "loop" as "loop",
       },

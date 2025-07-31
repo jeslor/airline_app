@@ -23,9 +23,28 @@ export function Flights({ flights }: { flights: any[] }) {
                   <p className="text-lg font-semibold text-red-800">
                     {flight.airline}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    Flight {flight.flightNumber}
-                  </p>
+                  <div className="text-sm text-muted-foreground flex gap-x-2">
+                    <p className=" ">
+                      <strong>Flight:</strong>
+                    </p>
+                    <div>
+                      <p>{flight.flightNumber}</p>
+                      {flight.layovers && flight.layovers.length > 0 && (
+                        <div className="pt-2">
+                          {flight.layovers.map(
+                            (layover: any, layoverIdx: number) => (
+                              <p
+                                key={layoverIdx}
+                                className="text-sm text-muted-foreground"
+                              >
+                                {layover.flightNumber}
+                              </p>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="hidden sm:block h-8 border-l border-gray-300 mx-4" />
@@ -70,8 +89,7 @@ export function Flights({ flights }: { flights: any[] }) {
                   <div className="text-sm font-semibold">
                     {flight.layovers.map((layover: any, layoverIdx: number) => (
                       <p key={layoverIdx} className="">
-                        Layover: {layover.airportCode} {layover.city} (
-                        {layover.duration}) in{" "}
+                        Layover: ({layover.duration}) in{" "}
                         <span className="text-gray-950 font-bold">
                           {layover.city}
                         </span>
