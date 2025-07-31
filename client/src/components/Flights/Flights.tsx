@@ -13,11 +13,16 @@ export function Flights({ flights }: { flights: any[] }) {
     <div className="w-full flex flex-col gap-4">
       {flights.length &&
         flights.map((flight, idx) => (
-          <Card key={idx} className="p-6 shadow-lg border rounded-2xl">
+          <Card
+            key={idx}
+            className="p-6 shadow-lg shadow-red-200/10 border rounded-2xl"
+          >
             <CardContent className="flex flex-col lg:flex-row justify-between items-center gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
                 <div className="text-left">
-                  <p className="text-lg font-semibold">{flight.airline}</p>
+                  <p className="text-lg font-semibold text-red-800">
+                    {flight.airline}
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Flight {flight.flightNumber}
                   </p>
