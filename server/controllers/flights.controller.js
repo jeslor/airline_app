@@ -11,14 +11,14 @@ const getFlights = asyncWrapper(async (req, res) => {
 
     const prompt = `
  You are a special travel agent, search the web for the best flights available  from ${body.origin} to ${body.destination} on ${body.departDate}  and ${body.returnDate}.
- - make sure the data you return is an object with the following properties:
+    - make sure the data you return is an object with the following properties and with no text before or after the JSON response:
     - make sure you find both outboundFlights and returnFlights: {outboundFlights: [], returnFlights: []}
-    - make sure you include the aircraft type, flight number, departure and arrival times,departure and arrival dates, airport codes, departure and arrival cities, and the airline.
+    - make sure each flight is complete from the starting city to the final destination city, let the connections be in the layover, each layover should have the airport code, city, and duration.
+    - make sure you include the aircraft type, flight number, departure and arrival times, departure and arrival dates, airport codes, departure and arrival cities, flight duration, and the airline each as an independent property of the object.
     - Include the price for each flight option.
     - Make sure you return at least 7 options.
     - make sure you arrange the information for example Departure , arrival and any layovers in individual properties.
     -This information is going to be used to generate a demo flight ticket so include the dates and times in a human-readable format, plus other relevant details.
-    - Respond with a valid JSON array of objects. No text before or after.
 `;
 
     const model = genAI.getGenerativeModel({
