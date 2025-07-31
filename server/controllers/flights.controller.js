@@ -13,7 +13,7 @@ const getFlights = asyncWrapper(async (req, res) => {
  You are a special travel agent, search the web for the best flights available  from ${body.origin} to ${body.destination} on ${body.departDate}  and ${body.returnDate}.
  - make sure the data you return is an object with the following properties:
     - make sure you find both outboundFlights and returnFlights: {outboundFlights: [], returnFlights: []}
-    - make sure you include the aircraft type, flight number, departure and arrival times, airport codes, departure and arrival cities, and the airline.
+    - make sure you include the aircraft type, flight number, departure and arrival times,departure and arrival dates, airport codes, departure and arrival cities, and the airline.
     - Include the price for each flight option.
     - Make sure you return at least 7 options.
     - make sure you arrange the information for example Departure , arrival and any layovers in individual properties.
