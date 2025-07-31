@@ -17,6 +17,7 @@ const getFlights = asyncWrapper(async (req, res) => {
     - make sure you include the aircraft type, flight number, departure and arrival times, departure and arrival dates, airport codes, departure and arrival cities, flight duration, and the airline each as an independent property of the object.
     - Include the price for each flight option.
     - Make sure you return at least 7 options.
+    - flight numbers (formatted as QF#### or QF####→QF#### for layovers), departure/arrival times and dates (human-readable), airport codes, cities, duration, and the airline (all renamed to "Quencer Airlines").
     - make sure you arrange the information for example Departure , arrival and any layovers in individual properties.
     -This information is going to be used to generate a demo flight ticket so include the dates and times in a human-readable format, plus other relevant details.
 `;
