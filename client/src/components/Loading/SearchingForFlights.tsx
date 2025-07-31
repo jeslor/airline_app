@@ -26,11 +26,11 @@ export default function SearchingForFlights(): any {
         initial="initial"
         animate="animate"
         variants={containerVariants}
-        className="relative w-30 h-30 flex items-center justify-center bg-conic from-slate-200/10 via-slate-200 to-red-600 rounded-full"
+        className="relative w-30 h-30 flex items-center justify-center bg-conic from-slate-200/10 via-slate-200 to-red-700 rounded-full"
       >
         <div className="absolute w-28 h-28 rounded-full  bg-slate-200 " />
         <motion.div className="absolute w-full h-full  rounded-full flex items-top justify-center">
-          <Plane className="size-10 fill-red-100 text-red-600 -m-5 rotate-[40deg]" />
+          <Plane className="size-10 fill-red-100 text-red-700 -m-4.5 rotate-[40deg]" />
         </motion.div>
       </motion.div>
 

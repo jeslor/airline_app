@@ -2,6 +2,7 @@ import { FlightBookingForm } from "./components/Booking/FlightBooking";
 import AvailableFlights from "./components/Flights/AvailableFlights";
 import logo from "/images/quencer_logo.webp";
 import GlobeWrapper from "./components/Globe/GlobeWrapper";
+import Booking from "./components/Booking/Booking";
 
 const App = () => {
   return (
@@ -13,6 +14,9 @@ const App = () => {
         </div>
         <div className="w-full relative mt-[-170px] ">
           <AvailableFlights />
+        </div>
+        <div>
+          <Booking />
         </div>
         <div className="text-center mt-18 mb-6">
           <div className="flexitems-center">

@@ -40,7 +40,13 @@ export function Flights({ flights }: { flights: any[] }) {
                     {flight.departureTime} – {flight.arrivalTime}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {flight.departureAirportCode} → {flight.arrivalAirportCode}
+                    {flight.departureAirportCode} →{" "}
+                    {flight.layovers && flight.layovers.length > 0
+                      ? flight.layovers
+                          .map((layover: any) => layover.airportCode)
+                          .join(" → ") + " → "
+                      : ""}{" "}
+                    {flight.arrivalAirportCode}
                   </p>
                 </div>
               </div>
