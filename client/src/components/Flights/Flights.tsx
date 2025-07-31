@@ -36,7 +36,8 @@ export function Flights({ flights }: { flights: any[] }) {
                     {flight.departure.time} – {flight.arrival.time}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {flight.departure.airport} → {flight.arrival.airport}
+                    {flight.departure.airportCode} →{" "}
+                    {flight.arrival.airportCode}
                   </p>
                 </div>
               </div>
