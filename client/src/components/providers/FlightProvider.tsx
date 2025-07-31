@@ -6,9 +6,9 @@ interface FlightContextType {
     outboundFlights: any[];
     returnFlights: any[];
   };
-  isSearchingFlights?: boolean;
+  isSearchingFlights: boolean;
   setFlightData: (data: any) => void;
-  setIsSearchingFlights?: (isSearching: boolean) => void;
+  setIsSearchingFlights: (isSearching: boolean) => void;
 }
 const FlightContext = createContext<FlightContextType | undefined>(undefined);
 

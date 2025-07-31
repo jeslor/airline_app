@@ -25,7 +25,7 @@ import { useFlightContext } from "../providers/FlightProvider";
 import { useState } from "react";
 
 export function FlightBookingForm() {
-  const { setFlightData } = useFlightContext();
+  const { setFlightData, setIsSearchingFlights } = useFlightContext();
   const [open, setOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
 
@@ -48,6 +48,8 @@ export function FlightBookingForm() {
 
   const onSubmit = async (data: z.infer<typeof flightBookingSchema>) => {
     try {
+      setIsSearchingFlights(true);
+
       const flights = await fetch("http://localhost:3000/api/flights", {
         method: "POST",
         headers: {
@@ -79,6 +81,8 @@ export function FlightBookingForm() {
     } catch (error: any) {
       console.error("Error fetching flights:", error);
       alert("Failed to fetch flights. Please try again later.");
+    } finally {
+      setIsSearchingFlights(false);
     }
   };
 
