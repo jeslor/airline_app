@@ -7,6 +7,20 @@ interface FlightContextType {
     returnFlights: any[];
   };
   isSearchingFlights: boolean;
+  bookingData: {
+    passenger: any;
+    outgoingFlight: any;
+    returnFlight: any;
+    totalPrice: number;
+    bookingStatus: string;
+    bookingId: string;
+    bookingDate: string;
+    bookingTime: string;
+    bookingReference: string;
+  } | null;
+  sections: any;
+  setSections: (section: any) => void;
+  setBookingData: (data: any) => void;
   setFlightData: (data: any) => void;
   setIsSearchingFlights: (isSearching: boolean) => void;
 }
@@ -21,9 +35,30 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
 
   const [isSearchingFlights, setIsSearchingFlights] = useState<boolean>(false);
 
+  const [bookingData, setBookingData] = useState<any>({
+    passenger: {},
+    outgoingFlight: {},
+    returnFlight: {},
+    totalPrice: 0,
+    bookingStatus: "",
+    bookingId: "",
+    bookingDate: "",
+    bookingTime: "",
+    bookingReference: "",
+  });
+  const [sections, setSections] = useState<any>({
+    outboundFlights: true,
+    returnFlights: false,
+    finalBooking: false,
+  });
+
   return (
     <FlightContext.Provider
       value={{
+        sections,
+        setSections,
+        bookingData,
+        setBookingData,
         flightData,
         setFlightData,
         isSearchingFlights,

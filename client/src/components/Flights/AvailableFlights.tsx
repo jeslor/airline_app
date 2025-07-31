@@ -4,7 +4,7 @@ import { Flights } from "./Flights";
 import SearchingForFlights from "../Loading/SearchingForFlights";
 
 const AvailableFlights = () => {
-  const { flightData, isSearchingFlights } = useFlightContext();
+  const { flightData, sections, isSearchingFlights } = useFlightContext();
   const [allFlights, setAllFlights] = useState<any>({
     outboundFlights: [],
     returnFlights: [],
@@ -34,50 +34,54 @@ const AvailableFlights = () => {
       ) : allFlights.outboundFlights.length !== 0 &&
         allFlights.returnFlights.length !== 0 ? (
         <>
-          <div className="pb-6">
-            <h3 className="text-[36px]">
-              Outgoing flights{" "}
-              <span className="block md:inline leading-[1.2] text-[20px] text-gray-500 pb-2">
-                <span className="text-[20px] text-gray-500 ">
-                  from {allFlights.outboundFlights[0]?.departureCity} to{" "}
-                  {allFlights.outboundFlights[0]?.arrivalCity}
+          {sections.outboundFlights && (
+            <div className="pb-6">
+              <h3 className="text-[36px]">
+                Outgoing flights{" "}
+                <span className="block md:inline leading-[1.2] text-[20px] text-gray-500 pb-2">
+                  <span className="text-[20px] text-gray-500 ">
+                    from {allFlights.outboundFlights[0]?.departureCity} to{" "}
+                    {allFlights.outboundFlights[0]?.arrivalCity}
+                  </span>
+                  <span className="text-[20px] text-gray-500">
+                    {" "}
+                    on{" "}
+                    {allFlights.outboundFlights[0]?.departureDate
+                      ? new Date(
+                          allFlights.outboundFlights[0].departureDate
+                        ).toLocaleDateString()
+                      : "N/A"}
+                  </span>
                 </span>
-                <span className="text-[20px] text-gray-500">
-                  {" "}
-                  on{" "}
-                  {allFlights.outboundFlights[0]?.departureDate
-                    ? new Date(
-                        allFlights.outboundFlights[0].departureDate
-                      ).toLocaleDateString()
-                    : "N/A"}
-                </span>
-              </span>
-            </h3>
+              </h3>
 
-            <Flights flights={allFlights.outboundFlights} />
-          </div>
-          <div className="pb-6">
-            <h3 className="text-[36px]">
-              Return flights
-              <span className="block md:inline leading-[1.2] text-[20px] text-gray-500 pb-2">
-                <span className="text-[20px] text-gray-500">
-                  {" "}
-                  from {allFlights.returnFlights[0]?.departureCity} to{" "}
-                  {allFlights.returnFlights[0]?.arrivalCity}
+              <Flights flights={allFlights.outboundFlights} isOutgoing={true} />
+            </div>
+          )}
+          {sections.returnFlights && (
+            <div className="pb-6">
+              <h3 className="text-[36px]">
+                Return flights
+                <span className="block md:inline leading-[1.2] text-[20px] text-gray-500 pb-2">
+                  <span className="text-[20px] text-gray-500">
+                    {" "}
+                    from {allFlights.returnFlights[0]?.departureCity} to{" "}
+                    {allFlights.returnFlights[0]?.arrivalCity}
+                  </span>
+                  <span className="text-[20px] text-gray-500">
+                    {" "}
+                    on{" "}
+                    {allFlights.returnFlights[0]?.departureDate
+                      ? new Date(
+                          allFlights.returnFlights[0].departureDate
+                        ).toLocaleDateString()
+                      : "N/A"}
+                  </span>
                 </span>
-                <span className="text-[20px] text-gray-500">
-                  {" "}
-                  on{" "}
-                  {allFlights.returnFlights[0]?.departureDate
-                    ? new Date(
-                        allFlights.returnFlights[0].departureDate
-                      ).toLocaleDateString()
-                    : "N/A"}
-                </span>
-              </span>
-            </h3>
-            <Flights flights={allFlights.returnFlights} />
-          </div>
+              </h3>
+              <Flights flights={allFlights.returnFlights} isReturning={true} />
+            </div>
+          )}
         </>
       ) : (
         <div className="text-center">

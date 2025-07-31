@@ -1,8 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "../ui/card";
 import { format } from "date-fns";
+import { useFlightContext } from "../providers/FlightProvider";
 
-export function Flights({ flights }: { flights: any[] }) {
+export function Flights({
+  flights,
+  isOutgoing = false,
+  isReturning = false,
+}: {
+  flights: any[];
+  isOutgoing?: boolean;
+  isReturning?: boolean;
+}) {
+  const { setBookingData } = useFlightContext();
+  const handleBookFlight = (flight: any) => {
+    setBookingData((prevData: any) => ({
+      ...prevData,
+      outgoingFlight: isOutgoing ? flight : prevData.outgoingFlight,
+      returnFlight: isReturning ? flight : prevData.returnFlight,
+    }));
+  };
   if (!flights || flights.length === 0) {
     return <p className="text-center text-gray-500">No flights found.</p>;
   }
@@ -108,7 +125,10 @@ export function Flights({ flights }: { flights: any[] }) {
 
               {/* Right side: Book button */}
               <div className="w-full sm:w-auto flex flex-col items-start justify-center sm:items-end gap-2">
-                <Button className="bg-red-800 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto">
+                <Button
+                  onClick={() => handleBookFlight(flight)}
+                  className="bg-red-800 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto"
+                >
                   Book Now
                 </Button>
                 <h4 className="text-right text-gray-800 flex items-center gap-2 justify-start w-full pl-3">

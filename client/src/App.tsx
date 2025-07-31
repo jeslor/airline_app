@@ -2,9 +2,12 @@ import { FlightBookingForm } from "./components/Booking/FlightBooking";
 import AvailableFlights from "./components/Flights/AvailableFlights";
 import logo from "/images/quencer_logo.webp";
 import GlobeWrapper from "./components/Globe/GlobeWrapper";
-import Booking from "./components/Booking/Booking";
+import FinalizeBooking from "./components/Booking/FinaliseBooking";
+import BookingBubble from "./components/Booking/BookingBubble";
+import { useFlightContext } from "./components/providers/FlightProvider";
 
 const App = () => {
+  const { sections } = useFlightContext();
   return (
     <div className="w-full">
       <GlobeWrapper />
@@ -15,10 +18,13 @@ const App = () => {
         <div className="w-full relative mt-[-170px] ">
           <AvailableFlights />
         </div>
-        <div>
-          <Booking />
-        </div>
-        <div className="text-center mt-18 mb-6">
+        {sections.finalBooking && (
+          <div>
+            <FinalizeBooking />
+          </div>
+        )}
+        <BookingBubble />
+        <div className="text-center mt-18 mb-[130px]">
           <div className="flexitems-center">
             <div className="w-24 h-24 mx-auto">
               <img src={logo} alt="" />

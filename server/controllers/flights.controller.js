@@ -13,11 +13,11 @@ const getFlights = asyncWrapper(async (req, res) => {
  You are a special travel agent, search the web for the best flights available  from ${body.origin} to ${body.destination} on ${body.departDate}  and ${body.returnDate}.
     - make sure the data you return is an object with the following properties and with no text before or after the JSON response:
     - make sure you find both outboundFlights and returnFlights: {outboundFlights: [], returnFlights: []}
-    - make sure each flight is complete from the starting city to the final destination city, let the connections be in the layover, each layover should have the airport code, city, and duration.
+    - make sure each flight is complete from the starting city to the final destination city, let the connections be in the layover, each layover should have the airport code, flight number, city, and duration.
     - make sure you include the aircraft type, flight number, departure and arrival times, departure and arrival dates, airport codes, departure and arrival cities, flight duration, and the airline each as an independent property of the object.
     - Include the price for each flight option.
     - Make sure you return at least 7 options.
-    - flight numbers (formatted as QF#### or QF####→QF#### for layovers), departure/arrival times and dates (human-readable), airport codes, cities, duration, and the airline (all renamed to "Quencer Airlines").
+    - flight numbers (formatted as QF####), departure/arrival times and dates (human-readable), airport codes, cities, duration, and the airline (all renamed to "Quencer Airlines").
     - make sure you arrange the information for example Departure , arrival and any layovers in individual properties.
     -This information is going to be used to generate a demo flight ticket so include the dates and times in a human-readable format, plus other relevant details.
 `;
