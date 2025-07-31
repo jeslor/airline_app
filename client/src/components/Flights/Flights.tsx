@@ -55,7 +55,9 @@ export function Flights({ flights }: { flights: any[] }) {
                     from {flight.departureCity} to {flight.arrivalCity}
                   </span>
                 </p>
-                <p className="text-sm font-semibold">{flight.flightDuration}</p>
+                <p className="text-sm font-semibold text-red-800">
+                  {flight.flightDuration}
+                </p>
                 {flight.layovers &&
                 typeof flight.layovers === "object" &&
                 flight.layovers.length ? (

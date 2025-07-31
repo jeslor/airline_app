@@ -1,6 +1,6 @@
 import { FlightBookingForm } from "./components/Booking/FlightBooking";
 import AvailableFlights from "./components/Flights/AvailableFlights";
-
+import logo from "/images/quencer_logo.webp";
 import GlobeWrapper from "./components/Globe/GlobeWrapper";
 
 const App = () => {
@@ -15,9 +15,19 @@ const App = () => {
           <AvailableFlights />
         </div>
         <div className="text-center mt-18 mb-6">
-          <h1 className="text-2xl font-bold">Airline App</h1>
-          <p className="mt-2 opacity-40">
-            Explore the world with this interactive globe.
+          <div className="flexitems-center">
+            <div className="w-24 h-24 mx-auto">
+              <img src={logo} alt="" />
+            </div>
+            <h1 className="text-2xl font-bold">Quencer Airlines</h1>
+          </div>
+          <p
+            className="mt-2 opacity-70 w-full max-w-[800px] mx-auto text-[12px] text-red-700
+          "
+          >
+            Explorer this demo application to book flights and explore available
+            options. Please remember, this is not a real booking system, but a
+            demonstration of how a real system works.
           </p>
         </div>
       </div>
