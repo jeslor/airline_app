@@ -19,7 +19,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
       : {}
   );
 
-  const [isSearchingFlights, setIsSearchingFlights] = useState<boolean>(true);
+  const [isSearchingFlights, setIsSearchingFlights] = useState<boolean>(false);
 
   return (
     <FlightContext.Provider

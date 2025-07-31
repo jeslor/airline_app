@@ -17,7 +17,7 @@ const App = () => {
         <div className="text-center mt-18 mb-6">
           <h1 className="text-2xl font-bold">Airline App</h1>
           <p className="mt-2 opacity-40">
-            Explore the world with our interactive globe.
+            Explore the world with this interactive globe.
           </p>
         </div>
       </div>
