@@ -112,9 +112,9 @@ const bookFlight = asyncWrapper(async (req, res) => {
     await transporter.sendMail({
       from: `"Quencer Airlines" <${process.env.EMAIL_USER}>`,
       to: `${bookingData.passenger.email}`,
-      subject: "Your Flight Booking Confirmation",
+      subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.firstName} ${passenger.lastName}`,
       html: `
-     <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6; background-color: #f9f9f9; padding: 20px;">
+     <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6;">
   <div style=" margin: auto; background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
     
     <h2 style="color: #2c3e50;">Dear ${passenger.firstName} ${
@@ -130,47 +130,65 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     <hr style="margin: 30px 0;" />
 
-    <h3 style="color: #2c3e50;">🛫 Outbound Flight</h3>
-    <ul style="padding-left: 20px;">
-      <li><strong>Flight:</strong> ${outboundFlight.flightNumber} (${
-        outboundFlight.aircraftType
-      })</li>
-      <li><strong>From:</strong> ${outboundFlight.departureCity} (${
-        outboundFlight.departureAirportCode
-      })</li>
-      <li><strong>To:</strong> ${outboundFlight.arrivalCity} (${
-        outboundFlight.arrivalAirportCode
-      })</li>
-      <li><strong>Departure:</strong> ${outboundFlight.departureDate} at ${
+    <!-- Flight Details Section -->
+<div style="margin-top: 30px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; font-size: 15px;">
+  <!-- Outbound Flight -->
+  <div style="background-color: #f5f5f5; padding: 16px; font-weight: bold; color: #333;">
+    ${outboundFlight.departureCity} to ${outboundFlight.arrivalCity} – ${
+        outboundFlight.flightNumber
+      }
+  </div>
+  <div style="padding: 16px; border-bottom: 1px solid #eee;">
+    <div style="margin-bottom: 8px;">
+      <strong>Departure:</strong> ${outboundFlight.departureDate}, ${
         outboundFlight.departureTime
-      }</li>
-      <li><strong>Arrival:</strong> ${outboundFlight.arrivalDate} at ${
+      }
+    </div>
+    <div style="margin-bottom: 8px;">
+      <strong>Arrival:</strong> ${outboundFlight.arrivalDate}, ${
         outboundFlight.arrivalTime
-      }</li>
-      <li><strong>Duration:</strong> ${outboundFlight.flightDuration}</li>
-      <li><strong>Price:</strong> $${outboundFlight.price}</li>
-    </ul>
+      }
+    </div>
+    <div style="margin-bottom: 8px;">
+      <strong>Flight duration:</strong> ${outboundFlight.flightDuration}
+    </div>
+    <div style="margin-bottom: 8px;">
+      <strong>Aircraft:</strong> ${outboundFlight.aircraftType}
+    </div>
+    <div style="margin-bottom: 8px;">
+      <strong>Price:</strong> $${outboundFlight.price}
+    </div>
+  </div>
 
-    <h3 style="color: #2c3e50;">🛬 Return Flight</h3>
-    <ul style="padding-left: 20px;">
-      <li><strong>Flight:</strong> ${returnFlight.flightNumber} (${
-        returnFlight.aircraftType
-      })</li>
-      <li><strong>From:</strong> ${returnFlight.departureCity} (${
-        returnFlight.departureAirportCode
-      })</li>
-      <li><strong>To:</strong> ${returnFlight.arrivalCity} (${
-        returnFlight.arrivalAirportCode
-      })</li>
-      <li><strong>Departure:</strong> ${returnFlight.departureDate} at ${
+  <!-- Return Flight -->
+  <div style="background-color: #f5f5f5; padding: 16px; font-weight: bold; color: #333;">
+    ${returnFlight.departureCity} to ${returnFlight.arrivalCity} – ${
+        returnFlight.flightNumber
+      }
+  </div>
+  <div style="padding: 16px;">
+    <div style="margin-bottom: 8px;">
+      <strong>Departure:</strong> ${returnFlight.departureDate}, ${
         returnFlight.departureTime
-      }</li>
-      <li><strong>Arrival:</strong> ${returnFlight.arrivalDate} at ${
+      }
+    </div>
+    <div style="margin-bottom: 8px;">
+      <strong>Arrival:</strong> ${returnFlight.arrivalDate}, ${
         returnFlight.arrivalTime
-      }</li>
-      <li><strong>Duration:</strong> ${returnFlight.flightDuration}</li>
-      <li><strong>Price:</strong> $${returnFlight.price}</li>
-    </ul>
+      }
+    </div>
+    <div style="margin-bottom: 8px;">
+      <strong>Flight duration:</strong> ${returnFlight.flightDuration}
+    </div>
+    <div style="margin-bottom: 8px;">
+      <strong>Aircraft:</strong> ${returnFlight.aircraftType}
+    </div>
+    <div style="margin-bottom: 8px;">
+      <strong>Price:</strong> $${returnFlight.price}
+    </div>
+  </div>
+</div>
+
 
     <hr style="margin: 30px 0;" />
 
