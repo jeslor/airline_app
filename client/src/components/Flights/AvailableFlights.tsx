@@ -61,7 +61,7 @@ const AvailableFlights = () => {
                 </span>
               </h3>
 
-              <Flights flights={allFlights.outboundFlights} isOutgoing={true} />
+              <Flights flights={allFlights.outboundFlights} />
             </motion.div>
           )}
           {sections.returnFlights && (
@@ -90,7 +90,7 @@ const AvailableFlights = () => {
                   </span>
                 </span>
               </h3>
-              <Flights flights={allFlights.returnFlights} isReturning={true} />
+              <Flights flights={allFlights.returnFlights} />
             </motion.div>
           )}
         </>

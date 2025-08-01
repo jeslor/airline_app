@@ -13,8 +13,6 @@ const BookingBubble = () => {
     return null;
   }
 
-  console.log("Booking Bubble Data:", bookingData);
-
   return (
     <div className="shadow-4xl shadow-gray-800 py-4 px-4 md:px-8 bottom-6 rounded-[30px] bg-white w-full max-w-[900px] fixed  left-1/2 transform -translate-x-1/2 z-50 border border-gray-100 flex items-center justify-between gap-4">
       {/* Flight Details Section */}
@@ -29,19 +27,21 @@ const BookingBubble = () => {
                 {outgoingFlight.departureDate} - {outgoingFlight.airline}
               </p>
             </div>
-            <button
-              onClick={() =>
-                handleContinueBooking({
-                  outboundFlights: true,
-                  returnFlights: false,
-                  finalBooking: false,
-                })
-              }
-              className="text-[12px] text-rose-700 underline hover:text-rose-800 font-semibold cursor-pointer "
-            >
-              <Icon icon="mdi:airplane-takeoff" className="inline mr-1" />
-              outgoing flight
-            </button>
+            {sections.returnFlights ? (
+              <button
+                onClick={() =>
+                  handleContinueBooking({
+                    outboundFlights: true,
+                    returnFlights: false,
+                    finalBooking: false,
+                  })
+                }
+                className="text-[12px] text-rose-700 underline hover:text-rose-800 font-semibold cursor-pointer "
+              >
+                <Icon icon="mdi:airplane-takeoff" className="inline mr-1" />
+                outgoing flight
+              </button>
+            ) : null}
           </div>
         )}
 
