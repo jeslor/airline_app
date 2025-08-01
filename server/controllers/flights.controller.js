@@ -50,4 +50,18 @@ const getFlights = asyncWrapper(async (req, res) => {
   }
 });
 
-export { getFlights };
+const bookFlight = asyncWrapper(async (req, res) => {
+  try {
+    const bookingData = req.body;
+    console.log("Booking Data:", bookingData);
+
+    if (!bookingData) {
+      return res.status(400).json({ message: "Booking data is required" });
+    }
+  } catch (error) {
+    console.error("Error in booking flight:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+export { getFlights, bookFlight };
