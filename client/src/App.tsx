@@ -21,11 +21,11 @@ const App = () => {
           </div>
         )}
         {sections.finalBooking && (
-          <div>
+          <div className="max-w-[1380px] mx-auto mt-10 space-y-6 px-4 sm:px-6 lg:px-8 w-full min-h-[400px]">
             <FinalizeBooking />
           </div>
         )}
-        {bookingData?.outgoingFlight.hasOwnProperty("flightNumber") &&
+        {bookingData?.outboundFlight.hasOwnProperty("flightNumber") &&
           !sections.finalBooking && <BookingBubble />}
         <div className="text-center mt-18 mb-[130px]">
           <div className="flexitems-center">

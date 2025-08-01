@@ -9,18 +9,18 @@ export function Flights({ flights }: { flights: any[] }) {
   const handleBookFlight = (flight: any) => {
     setBookingData((prevData: any) => ({
       ...prevData,
-      outgoingFlight: sections.outboundFlights
+      outboundFlight: sections.outboundFlights
         ? flight
-        : prevData.outgoingFlight,
+        : prevData.outboundFlight,
       returnFlight: sections.returnFlights ? flight : prevData.returnFlight,
     }));
     localStorage.setItem(
       "bookingData",
       JSON.stringify({
         ...bookingData,
-        outgoingFlight: sections.outboundFlights
+        outboundFlight: sections.outboundFlights
           ? flight
-          : bookingData?.outgoingFlight,
+          : bookingData?.outboundFlight,
         returnFlight: sections.returnFlights
           ? flight
           : bookingData?.returnFlight,
@@ -140,7 +140,7 @@ export function Flights({ flights }: { flights: any[] }) {
                     className=" bg-gray-800 hover:bg-black text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto cursor-pointer"
                   >
                     Select flight
-                    {(bookingData?.outgoingFlight.flightNumber ===
+                    {(bookingData?.outboundFlight.flightNumber ===
                       flight.flightNumber ||
                       bookingData?.returnFlight.flightNumber ===
                         flight.flightNumber) && (

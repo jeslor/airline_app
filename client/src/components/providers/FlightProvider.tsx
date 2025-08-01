@@ -9,7 +9,7 @@ interface FlightContextType {
   isSearchingFlights: boolean;
   bookingData: {
     passenger: any;
-    outgoingFlight: any;
+    outboundFlight: any;
     returnFlight: any;
     totalPrice: number;
     bookingStatus: string;
@@ -45,7 +45,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
       ? JSON.parse(localStorage.getItem("bookingData")!)
       : {
           passenger: {},
-          outgoingFlight: {},
+          outboundFlight: {},
           returnFlight: {},
           totalPrice: 0,
           bookingStatus: "",

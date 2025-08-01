@@ -4,12 +4,12 @@ import { useFlightContext } from "../providers/FlightProvider";
 
 const BookingBubble = () => {
   const { bookingData, handleContinueBooking, sections } = useFlightContext();
-  const { outgoingFlight, returnFlight } = bookingData || {};
+  const { outboundFlight, returnFlight } = bookingData || {};
   const totalCost =
-    (bookingData?.outgoingFlight?.price || 0) + (returnFlight?.price || 0);
+    (bookingData?.outboundFlight?.price || 0) + (returnFlight?.price || 0);
 
   // If no flights are selected, don't show the bubble
-  if (!outgoingFlight && !returnFlight) {
+  if (!outboundFlight && !returnFlight) {
     return null;
   }
 
@@ -17,14 +17,14 @@ const BookingBubble = () => {
     <div className="shadow-2xl shadow-gray-800 py-4 px-4 md:px-8 bottom-6 rounded-[30px] bg-white w-full max-w-[900px] fixed  left-1/2 transform -translate-x-1/2 z-50 border border-gray-100 flex items-center justify-between gap-4">
       {/* Flight Details Section */}
       <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {outgoingFlight && (
+        {outboundFlight && (
           <div className="flex flex-col items-start space-x-2">
             <div className="text-sm">
               <p className="font-semibold text-gray-800">
-                {outgoingFlight.departureCity} to {outgoingFlight.arrivalCity}
+                {outboundFlight.departureCity} to {outboundFlight.arrivalCity}
               </p>
               <p className="text-xs text-gray-600">
-                {outgoingFlight.departureDate} - {outgoingFlight.airline}
+                {outboundFlight.departureDate} - {outboundFlight.airline}
               </p>
             </div>
             {sections.returnFlights ? (
@@ -77,7 +77,7 @@ const BookingBubble = () => {
 
       {/* Total Cost */}
       <div className="text-right flex-shrink-0">
-        {bookingData?.outgoingFlight.flightNumber &&
+        {bookingData?.outboundFlight.flightNumber &&
           bookingData?.returnFlight.flightNumber && (
             <button
               onClick={() =>
