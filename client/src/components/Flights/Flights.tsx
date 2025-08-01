@@ -139,9 +139,13 @@ export function Flights({
                 >
                   Book Now
                 </Button>
-                <h4 className="text-right text-gray-800 flex items-center gap-2 justify-start w-full pl-3">
+                <h4 className="text-right text-black flex items-center gap-2 justify-start w-full pl-3">
                   <span className="text-lg font-semibold">
-                    ${flight.price.toFixed(2)}
+                    $
+                    {flight.price.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
                 </h4>
               </div>
