@@ -62,40 +62,49 @@ const bookFlight = asyncWrapper(async (req, res) => {
   // }
   try {
     const bookingData = req.body;
-    const { default: chromium } = await import("@sparticuz/chromium");
+    const {
+      passenger,
+      outboundFlight,
+      returnFlight,
+      bookingReference,
+      bookingDate,
+      bookingTime,
+      totalPrice,
+    } = bookingData;
+    // const { default: chromium } = await import("@sparticuz/chromium");
 
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
+    // const browser = await puppeteer.launch({
+    //   args: chromium.args,
+    //   executablePath: await chromium.executablePath(),
+    //   headless: chromium.headless,
+    // });
 
-    /* STEP 1: Generate Child PDF */
-    const ticketPage = await browser.newPage();
-    const ticketHtml = TicketDetailsTemplate(bookingData);
+    // /* STEP 1: Generate Child PDF */
+    // const ticketPage = await browser.newPage();
+    // const ticketHtml = TicketDetailsTemplate(bookingData);
 
-    await ticketPage.setContent(ticketHtml, {
-      waitUntil: "networkidle2",
-      timeout: 120000,
-    });
+    // await ticketPage.setContent(ticketHtml, {
+    //   waitUntil: "networkidle2",
+    //   timeout: 120000,
+    // });
 
-    const ticketPdfBuffer = await ticketPage.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
-    });
+    // const ticketPdfBuffer = await ticketPage.pdf({
+    //   format: "A4",
+    //   printBackground: true,
+    //   margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+    // });
 
-    await ticketPage.close(); // Close this page after use
+    // await ticketPage.close(); // Close this page after use
 
-    await browser.close();
+    // await browser.close();
 
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: process.env.SMTP_SECURE,
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: process.env.EMAIL_SECURE,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER.toString(),
+        pass: process.env.EMAIL_PASS.toString(),
       },
     });
 
@@ -106,7 +115,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
       subject: "Your Flight Booking Confirmation",
       html: `
      <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6; background-color: #f9f9f9; padding: 20px;">
-  <div style="max-width: 650px; margin: auto; background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
+  <div style=" margin: auto; background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
     
     <h2 style="color: #2c3e50;">Dear ${passenger.firstName} ${
         passenger.lastName
@@ -197,26 +206,30 @@ const bookFlight = asyncWrapper(async (req, res) => {
 </div>
 
       `,
-      attachments: [
-        {
-          filename: "Sponsored Child details.pdf",
-          content: childPdfBuffer,
-          contentType: "application/pdf",
-        },
-        {
-          filename: "Sponsor Details.pdf",
-          content: sponsorPdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
+      // attachments: [
+      //   {
+      //     filename: "flight ticket.pdf",
+      //     content: ticketPdfBuffer,
+      //     contentType: "application/pdf",
+      //   },
+      // ],
     });
 
     res.json({
       message: "Email with Ticket sent successfully!",
       status: 200,
       data: {
-        childName: child.firstName,
-        sponsorName: sponsor.sponsorfirstName,
+        message: "Booking successful",
+        bookingReference: bookingReference || "To be assigned",
+        passenger: {
+          firstName: passenger.firstName,
+          lastName: passenger.lastName,
+          email: passenger.email,
+          phoneNumber: passenger.phoneNumber,
+          country: passenger.country,
+        },
+        bookingDate: bookingDate || new Date().toISOString(),
+        bookingTime: bookingTime || new Date().toISOString(),
       },
     });
 
