@@ -123,3 +123,9 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .quencerButton {
+    @apply bg-red-800 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto;
+  }
+}

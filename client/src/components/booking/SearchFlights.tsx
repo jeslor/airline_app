@@ -24,7 +24,7 @@ import { flightBookingSchema } from "@/schemas/FlightBookingSchema";
 import { useFlightContext } from "../providers/FlightProvider";
 import { useState } from "react";
 
-export function FlightBookingForm() {
+export function SearchFlights() {
   const { setFlightData, setIsSearchingFlights } = useFlightContext();
   const [open, setOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
@@ -70,6 +70,9 @@ export function FlightBookingForm() {
       // check if there are some flights in localStorage
       if (localStorage.getItem("flightData")) {
         localStorage.removeItem("flightData");
+      }
+      if (localStorage.getItem("bookingData")) {
+        localStorage.removeItem("bookingData");
       }
 
       localStorage.setItem(

@@ -23,6 +23,11 @@ interface FlightContextType {
   setBookingData: (data: any) => void;
   setFlightData: (data: any) => void;
   setIsSearchingFlights: (isSearching: boolean) => void;
+  handleContinueBooking: (newSection: {
+    outboundFlights?: boolean;
+    returnFlights?: boolean;
+    finalBooking?: boolean;
+  }) => void;
 }
 const FlightContext = createContext<FlightContextType | undefined>(undefined);
 
@@ -35,22 +40,51 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
 
   const [isSearchingFlights, setIsSearchingFlights] = useState<boolean>(false);
 
-  const [bookingData, setBookingData] = useState<any>({
-    passenger: {},
-    outgoingFlight: {},
-    returnFlight: {},
-    totalPrice: 0,
-    bookingStatus: "",
-    bookingId: "",
-    bookingDate: "",
-    bookingTime: "",
-    bookingReference: "",
-  });
-  const [sections, setSections] = useState<any>({
-    outboundFlights: true,
-    returnFlights: false,
-    finalBooking: false,
-  });
+  const [bookingData, setBookingData] = useState<any>(
+    localStorage.getItem("bookingData")
+      ? JSON.parse(localStorage.getItem("bookingData")!)
+      : {
+          passenger: {},
+          outgoingFlight: {},
+          returnFlight: {},
+          totalPrice: 0,
+          bookingStatus: "",
+          bookingId: "",
+          bookingDate: "",
+          bookingTime: "",
+          bookingReference: "",
+        }
+  );
+  const [sections, setSections] = useState<any>(
+    localStorage.getItem("sections")
+      ? JSON.parse(localStorage.getItem("sections")!)
+      : {
+          outboundFlights: true,
+          returnFlights: false,
+          finalBooking: false,
+        }
+  );
+
+  const handleContinueBooking = (
+    newSection: {
+      outboundFlights?: boolean;
+      returnFlights?: boolean;
+      finalBooking?: boolean;
+    } = {}
+  ) => {
+    setSections((prevSections: any) => ({
+      ...prevSections,
+      ...newSection,
+    }));
+
+    localStorage.setItem(
+      "sections",
+      JSON.stringify({
+        ...sections,
+        ...newSection,
+      })
+    );
+  };
 
   return (
     <FlightContext.Provider
@@ -63,6 +97,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
         setFlightData,
         isSearchingFlights,
         setIsSearchingFlights,
+        handleContinueBooking,
       }}
     >
       {children}

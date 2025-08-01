@@ -1,19 +1,19 @@
-import { FlightBookingForm } from "./components/Booking/FlightBooking";
 import AvailableFlights from "./components/Flights/AvailableFlights";
 import logo from "/images/quencer_logo.webp";
 import GlobeWrapper from "./components/Globe/GlobeWrapper";
 import FinalizeBooking from "./components/Booking/FinaliseBooking";
 import BookingBubble from "./components/Booking/BookingBubble";
 import { useFlightContext } from "./components/providers/FlightProvider";
+import { SearchFlights } from "./components/Booking/SearchFlights";
 
 const App = () => {
-  const { sections } = useFlightContext();
+  const { sections, bookingData } = useFlightContext();
   return (
     <div className="w-full">
       <GlobeWrapper />
       <div className="bg-slate-200 flex flex-col items-center">
         <div className="bg-white min-h-[300px] w-full mx-4 max-w-[1200px] max-auto -top-[200px] relative z-[3] rounded-t-4xl rounded-b-2xl">
-          <FlightBookingForm />
+          <SearchFlights />
         </div>
         <div className="w-full relative mt-[-170px] ">
           <AvailableFlights />
@@ -23,7 +23,9 @@ const App = () => {
             <FinalizeBooking />
           </div>
         )}
-        <BookingBubble />
+        {bookingData?.outgoingFlight.hasOwnProperty("flightNumber") && (
+          <BookingBubble />
+        )}
         <div className="text-center mt-18 mb-[130px]">
           <div className="flexitems-center">
             <div className="w-24 h-24 mx-auto">

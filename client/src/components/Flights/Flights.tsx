@@ -12,13 +12,21 @@ export function Flights({
   isOutgoing?: boolean;
   isReturning?: boolean;
 }) {
-  const { setBookingData } = useFlightContext();
+  const { setBookingData, bookingData } = useFlightContext();
   const handleBookFlight = (flight: any) => {
     setBookingData((prevData: any) => ({
       ...prevData,
       outgoingFlight: isOutgoing ? flight : prevData.outgoingFlight,
       returnFlight: isReturning ? flight : prevData.returnFlight,
     }));
+    localStorage.setItem(
+      "bookingData",
+      JSON.stringify({
+        ...bookingData,
+        outgoingFlight: isOutgoing ? flight : bookingData?.outgoingFlight,
+        returnFlight: isReturning ? flight : bookingData?.returnFlight,
+      })
+    );
   };
   if (!flights || flights.length === 0) {
     return <p className="text-center text-gray-500">No flights found.</p>;
@@ -127,7 +135,7 @@ export function Flights({
               <div className="w-full sm:w-auto flex flex-col items-start justify-center sm:items-end gap-2">
                 <Button
                   onClick={() => handleBookFlight(flight)}
-                  className="bg-red-800 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto"
+                  className="quencerButton"
                 >
                   Book Now
                 </Button>
