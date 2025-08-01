@@ -3,7 +3,8 @@ import { Icon } from "@iconify/react";
 import { useFlightContext } from "../providers/FlightProvider";
 
 const BookingBubble = () => {
-  const { bookingData, handleContinueBooking, sections } = useFlightContext();
+  const { bookingData, handleContinueBooking, sections, setBookingData } =
+    useFlightContext();
   const { outboundFlight, returnFlight } = bookingData || {};
   const totalCost =
     (bookingData?.outboundFlight?.price || 0) + (returnFlight?.price || 0);
@@ -12,6 +13,31 @@ const BookingBubble = () => {
   if (!outboundFlight && !returnFlight) {
     return null;
   }
+
+  const completeBooking = () => {
+    handleContinueBooking({
+      outboundFlights: false,
+      returnFlights: false,
+      finalBooking: true,
+    });
+    setBookingData((prevData: any) => ({
+      ...prevData,
+      totalPrice: totalCost.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    }));
+    localStorage.setItem(
+      "bookingData",
+      JSON.stringify({
+        ...bookingData,
+        totalPrice: totalCost.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      })
+    );
+  };
 
   return (
     <div className="shadow-2xl shadow-gray-800 py-4 px-4 md:px-8 bottom-6 rounded-[30px] bg-white w-full max-w-[900px] fixed  left-1/2 transform -translate-x-1/2 z-50 border border-gray-100 flex items-center justify-between gap-4">
@@ -80,13 +106,7 @@ const BookingBubble = () => {
         {bookingData?.outboundFlight.flightNumber &&
           bookingData?.returnFlight.flightNumber && (
             <button
-              onClick={() =>
-                handleContinueBooking({
-                  outboundFlights: false,
-                  returnFlights: false,
-                  finalBooking: true,
-                })
-              }
+              onClick={() => completeBooking()}
               className="bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-full w-fit sm:w-auto cursor-pointer"
             >
               Book now

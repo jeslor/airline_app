@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 interface FlightContextType {
   flightData: {
@@ -7,22 +7,21 @@ interface FlightContextType {
     returnFlights: any[];
   };
   isSearchingFlights: boolean;
+  isSubmitting: boolean;
   bookingData: {
     passenger: any;
     outboundFlight: any;
     returnFlight: any;
-    totalPrice: number;
-    bookingStatus: string;
-    bookingId: string;
+    totalPrice: string;
     bookingDate: string;
     bookingTime: string;
-    bookingReference: string;
   } | null;
   sections: any;
   setSections: (section: any) => void;
   setBookingData: (data: any) => void;
   setFlightData: (data: any) => void;
   setIsSearchingFlights: (isSearching: boolean) => void;
+  setIsSubmitting: (isSubmitting: boolean) => void;
   handleContinueBooking: (newSection: {
     outboundFlights?: boolean;
     returnFlights?: boolean;
@@ -64,6 +63,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
           finalBooking: false,
         }
   );
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const handleContinueBooking = (
     newSection: {
@@ -91,6 +91,8 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
       value={{
         sections,
         setSections,
+        // Placeholder for future use
+        isSubmitting,
         bookingData,
         setBookingData,
         flightData,
@@ -98,6 +100,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
         isSearchingFlights,
         setIsSearchingFlights,
         handleContinueBooking,
+        setIsSubmitting,
       }}
     >
       {children}

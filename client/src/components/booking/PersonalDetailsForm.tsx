@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Icon } from "@iconify/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -14,14 +15,68 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { personalDetailsSchema } from "@/schemas/PersonalDetailsSchema";
+import { useFlightContext } from "../providers/FlightProvider";
 
 export function PersonalDetailsForm() {
+  const {
+    setBookingData,
+    bookingData,
+    isSubmitting,
+    setIsSubmitting,
+    setSections,
+    setFlightData,
+  } = useFlightContext();
   const form = useForm({
     resolver: zodResolver(personalDetailsSchema),
   });
 
-  const onSubmit = (data: z.infer<typeof personalDetailsSchema>) => {
-    console.log(data);
+  const onSubmit = async (data: z.infer<typeof personalDetailsSchema>) => {
+    try {
+      setIsSubmitting(true);
+      setBookingData({ ...bookingData, passenger: data });
+
+      const flightBooked = await fetch("/api/book-flight", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...bookingData,
+          passenger: data,
+        }),
+      });
+    } catch (error) {
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStartOver = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    form.reset();
+    localStorage.removeItem("bookingData");
+    localStorage.removeItem("flightData");
+    localStorage.removeItem("sections");
+    setSections({
+      outboundFlights: true,
+      returnFlights: false,
+      finalBooking: false,
+    });
+    setBookingData({
+      passenger: {},
+      outboundFlight: {},
+      returnFlight: {},
+      totalPrice: 0,
+      bookingStatus: "",
+      bookingId: "",
+      bookingDate: "",
+      bookingTime: "",
+      bookingReference: "",
+    });
+    setFlightData({
+      outboundFlights: [],
+      returnFlights: [],
+    });
   };
 
   return (
@@ -112,12 +167,24 @@ export function PersonalDetailsForm() {
             )}
           />
         </div>
-        <Button
-          className="h-11  bg-red-800 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto mx-auto"
-          type="submit"
-        >
-          Complete Booking
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:justify-center">
+          <Button
+            disabled={isSubmitting}
+            className="h-11  bg-red-800 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto cursor-pointer "
+            type="submit"
+          >
+            Complete Booking
+          </Button>
+          <Button
+            onClick={(e) => handleStartOver(e)}
+            disabled={isSubmitting}
+            className="h-11  bg-gray-800 hover:bg-black text-white font-bold  py-2 rounded-full !w-fit sm:w-auto  cursor-pointer"
+            type="submit"
+          >
+            <Icon icon="radix-icons:cross-2" className="mr-1 size-4" />
+            Start Over
+          </Button>
+        </div>
       </form>
     </Form>
   );
