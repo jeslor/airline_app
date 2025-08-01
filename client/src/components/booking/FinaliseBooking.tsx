@@ -2,6 +2,7 @@ import { Flights } from "../Flights/Flights";
 import { format } from "date-fns";
 import { useFlightContext } from "../providers/FlightProvider";
 import { motion } from "framer-motion";
+import { PersonalDetailsForm } from "./PersonalDetailsForm";
 
 const FinalizeBooking = () => {
   const { bookingData } = useFlightContext();
@@ -64,7 +65,9 @@ const FinalizeBooking = () => {
       </div>
       <div className="py-6">
         <h3 className="text-2xl font-bold mb-4">Personal details</h3>
-        <div className=" bg-white p-4 rounded-lg shadow-md"></div>
+        <div className=" bg-white py-12 px-8 rounded-lg shadow-md">
+          <PersonalDetailsForm />
+        </div>
       </div>
     </motion.div>
   );

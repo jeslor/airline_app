@@ -138,7 +138,7 @@ export function Flights({ flights }: { flights: any[] }) {
                 <div className="w-full sm:w-auto flex flex-col items-start justify-center sm:items-end gap-2">
                   <Button
                     onClick={() => handleBookFlight(flight)}
-                    className=" bg-gray-800 hover:bg-black text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto cursor-pointer"
+                    className=" bg-gray-800 hover:bg-black text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto cursor-pointer h-9"
                   >
                     {sections.finalBooking
                       ? "selected flight"
