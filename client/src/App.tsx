@@ -15,17 +15,18 @@ const App = () => {
         <div className="bg-white min-h-[300px] w-full mx-4 max-w-[1200px] max-auto -top-[200px] relative z-[3] rounded-t-4xl rounded-b-2xl">
           <SearchFlights />
         </div>
-        <div className="w-full relative mt-[-170px] ">
-          <AvailableFlights />
-        </div>
+        {!sections.finalBooking && (
+          <div className="w-full relative mt-[-170px] ">
+            <AvailableFlights />
+          </div>
+        )}
         {sections.finalBooking && (
           <div>
             <FinalizeBooking />
           </div>
         )}
-        {bookingData?.outgoingFlight.hasOwnProperty("flightNumber") && (
-          <BookingBubble />
-        )}
+        {bookingData?.outgoingFlight.hasOwnProperty("flightNumber") &&
+          !sections.finalBooking && <BookingBubble />}
         <div className="text-center mt-18 mb-[130px]">
           <div className="flexitems-center">
             <div className="w-24 h-24 mx-auto">

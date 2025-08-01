@@ -139,7 +139,7 @@ export function Flights({ flights }: { flights: any[] }) {
                     onClick={() => handleBookFlight(flight)}
                     className=" bg-gray-800 hover:bg-black text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto cursor-pointer"
                   >
-                    Book Now
+                    Select flight
                     {(bookingData?.outgoingFlight.flightNumber ===
                       flight.flightNumber ||
                       bookingData?.returnFlight.flightNumber ===
