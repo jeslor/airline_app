@@ -1,4 +1,5 @@
 import { Flights } from "../Flights/Flights";
+import { format } from "date-fns";
 import { useFlightContext } from "../providers/FlightProvider";
 import { motion } from "framer-motion";
 
@@ -11,26 +12,27 @@ const FinalizeBooking = () => {
       exit={{ opacity: 0 }}
       className="-mt-[200px] py-8 w-full"
     >
-      <h2 className="text-2xl font-bold mb-4">Finalize Your Booking</h2>
+      <h2 className="text-2xl font-bold mb-4">Finalise Your Booking</h2>
       <p className="text-gray-600 mb-4">
         Please review your flight details and confirm your booking.
       </p>
 
       <div className="py-6">
-        <h3 className="text-[36px]">
+        <h3 className="text-2xl font-bold mb-4 text-gray-500">
           Outgoing flights{" "}
-          <span className="block md:inline leading-[1.2] text-[20px] text-gray-500 pb-2">
-            <span className="text-[20px] text-gray-500 ">
-              from {bookingData?.outboundFlight[0]?.departureCity} to{" "}
-              {bookingData?.outboundFlight[0]?.arrivalCity}
+          <span className="block md:inline leading-[1.2] text-[20px]  pb-2">
+            <span className="text-[20px] ">
+              from {bookingData?.outboundFlight?.departureCity} to{" "}
+              {bookingData?.outboundFlight?.arrivalCity}
             </span>
-            <span className="text-[20px] text-gray-500">
+            <span className="text-[20px]">
               {" "}
               on{" "}
-              {bookingData?.outboundFlight[0]?.departureDate
-                ? new Date(
-                    bookingData.outboundFlight[0]?.departureDate
-                  ).toLocaleDateString()
+              {bookingData?.outboundFlight?.departureDate
+                ? format(
+                    new Date(bookingData.outboundFlight?.departureDate),
+                    "MMMM dd, yyyy"
+                  )
                 : "N/A"}
             </span>
           </span>
@@ -38,26 +40,31 @@ const FinalizeBooking = () => {
         <Flights flights={[bookingData?.outboundFlight]} />
       </div>
       <div className="py-6">
-        <h3 className="text-[36px]">
+        <h3 className="text-2xl font-bold mb-4 text-gray-500">
           Return flights
-          <span className="block md:inline leading-[1.2] text-[20px] text-gray-500 pb-2">
-            <span className="text-[20px] text-gray-500">
+          <span className="block md:inline leading-[1.2] text-[20px]  pb-2">
+            <span className="text-[20px] ">
               {" "}
-              from {bookingData?.returnFlight[0]?.departureCity} to{" "}
-              {bookingData?.returnFlight[0]?.arrivalCity}
+              from {bookingData?.returnFlight?.departureCity} to{" "}
+              {bookingData?.returnFlight?.arrivalCity}
             </span>
-            <span className="text-[20px] text-gray-500">
+            <span className="text-[20px] ">
               {" "}
               on{" "}
-              {bookingData?.returnFlight[0]?.departureDate
-                ? new Date(
-                    bookingData?.returnFlight[0].departureDate
-                  ).toLocaleDateString()
+              {bookingData?.returnFlight?.departureDate
+                ? format(
+                    new Date(bookingData?.returnFlight.departureDate),
+                    "MMMM dd, yyyy"
+                  )
                 : "N/A"}
             </span>
           </span>
         </h3>
         <Flights flights={[bookingData?.returnFlight]} />
+      </div>
+      <div className="py-6">
+        <h3 className="text-2xl font-bold mb-4">Personal details</h3>
+        <div className=" bg-white p-4 rounded-lg shadow-md"></div>
       </div>
     </motion.div>
   );

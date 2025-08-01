@@ -7,7 +7,7 @@ import { useFlightContext } from "./components/providers/FlightProvider";
 import { SearchFlights } from "./components/Booking/SearchFlights";
 
 const App = () => {
-  const { sections, bookingData } = useFlightContext();
+  const { sections, bookingData, isSearchingFlights } = useFlightContext();
   return (
     <div className="w-full">
       <GlobeWrapper />
@@ -20,7 +20,7 @@ const App = () => {
             <AvailableFlights />
           </div>
         )}
-        {sections.finalBooking && (
+        {sections.finalBooking && !isSearchingFlights && (
           <div className="max-w-[1380px] mx-auto mt-10 space-y-6 px-4 sm:px-6 lg:px-8 w-full min-h-[400px]">
             <FinalizeBooking />
           </div>

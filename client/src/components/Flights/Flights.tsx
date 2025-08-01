@@ -5,7 +5,8 @@ import { useFlightContext } from "../providers/FlightProvider";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
 export function Flights({ flights }: { flights: any[] }) {
-  const { setBookingData, bookingData, sections } = useFlightContext();
+  const { setBookingData, bookingData, sections, handleContinueBooking } =
+    useFlightContext();
   const handleBookFlight = (flight: any) => {
     setBookingData((prevData: any) => ({
       ...prevData,
@@ -139,7 +140,9 @@ export function Flights({ flights }: { flights: any[] }) {
                     onClick={() => handleBookFlight(flight)}
                     className=" bg-gray-800 hover:bg-black text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto cursor-pointer"
                   >
-                    Select flight
+                    {sections.finalBooking
+                      ? "selected flight"
+                      : "select flight"}
                     {(bookingData?.outboundFlight.flightNumber ===
                       flight.flightNumber ||
                       bookingData?.returnFlight.flightNumber ===
@@ -159,6 +162,20 @@ export function Flights({ flights }: { flights: any[] }) {
                       })}
                     </span>
                   </h4>
+                  {sections.finalBooking && (
+                    <button
+                      onClick={() =>
+                        handleContinueBooking({
+                          outboundFlights: false,
+                          returnFlights: true,
+                          finalBooking: false,
+                        })
+                      }
+                      className="text-[12px] text-rose-700 underline hover:text-rose-800 font-semibold cursor-pointer"
+                    >
+                      change flight{" "}
+                    </button>
+                  )}
                 </div>
               </CardContent>
             </Card>
