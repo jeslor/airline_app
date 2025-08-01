@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useFlightContext } from "../providers/FlightProvider";
 import { Flights } from "./Flights";
 import SearchingForFlights from "../Loading/SearchingForFlights";
@@ -35,7 +36,12 @@ const AvailableFlights = () => {
         allFlights.returnFlights.length !== 0 ? (
         <>
           {sections.outboundFlights && (
-            <div className="pb-6">
+            <motion.div
+              initial={{ x: -400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="pb-6"
+            >
               <h3 className="text-[36px]">
                 Outgoing flights{" "}
                 <span className="block md:inline leading-[1.2] text-[20px] text-gray-500 pb-2">
@@ -56,10 +62,15 @@ const AvailableFlights = () => {
               </h3>
 
               <Flights flights={allFlights.outboundFlights} isOutgoing={true} />
-            </div>
+            </motion.div>
           )}
           {sections.returnFlights && (
-            <div className="pb-6">
+            <motion.div
+              initial={{ x: 400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="pb-6"
+            >
               <h3 className="text-[36px]">
                 Return flights
                 <span className="block md:inline leading-[1.2] text-[20px] text-gray-500 pb-2">
@@ -80,7 +91,7 @@ const AvailableFlights = () => {
                 </span>
               </h3>
               <Flights flights={allFlights.returnFlights} isReturning={true} />
-            </div>
+            </motion.div>
           )}
         </>
       ) : (
