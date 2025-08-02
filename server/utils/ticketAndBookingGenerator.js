@@ -14,3 +14,22 @@ export function generateTicketNumber(airlineCode = "123") {
   }
   return number;
 }
+
+export function generateSeatNumbers(rows = 40, seatsPerRow = "ABCDEF") {
+  const row = Math.floor(Math.random() * (rows - 9)) + 10; // Rows 10 to 40
+  const seat = seatsPerRow[Math.floor(Math.random() * seatsPerRow.length)];
+  return `${row}${seat}`;
+}
+
+export function generateRandomTerminal(count = 4) {
+  const isLetterBased = Math.random() < 0.5; // 50% chance for each style
+
+  const index = Math.floor(Math.random() * count);
+
+  if (isLetterBased) {
+    const letter = String.fromCharCode(65 + index); // A = 65
+    return `Terminal ${letter}`;
+  } else {
+    return `T${index + 1}`;
+  }
+}
