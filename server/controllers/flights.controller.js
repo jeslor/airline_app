@@ -195,7 +195,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
         <tr>
-          <td>Cabin: ${outboundFlight.cabinClass} &nbsp; • &nbsp; Class: ${
+          <td>${generateCabinZone()} &nbsp; • &nbsp; Class: ${
         outboundFlight.classCode
       }</td>
           <td style="text-align: right;">Aircraft: ${
@@ -259,7 +259,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
         <tr>
-          <td>Cabin: ${returnFlight.cabinClass} &nbsp; • &nbsp; Class: ${
+          <td>${generateCabinZone()} &nbsp; • &nbsp; Class: ${
         returnFlight.classCode
       }</td>
           <td style="text-align: right;">Aircraft: ${

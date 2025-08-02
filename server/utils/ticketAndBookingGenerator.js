@@ -33,3 +33,8 @@ export function generateRandomTerminal(count = 4) {
     return `T${index + 1}`;
   }
 }
+
+export function generateCabinZone() {
+  const zone = Math.floor(Math.random() * 5) + 1; // Generates 1–5
+  return `Zone ${zone}`;
+}
