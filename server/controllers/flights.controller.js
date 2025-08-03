@@ -10,6 +10,10 @@ import {
   generateSeatNumbers,
 } from "../utils/ticketAndBookingGenerator.js";
 
+const logoPath = path.join(__dirname, "public", "images", "airline.png");
+const logoBase64 = fs.readFileSync(logoPath, { encoding: "base64" });
+const airlineUrl = `data:image/png;base64,${logoBase64}`;
+
 const getFlights = asyncWrapper(async (req, res) => {
   try {
     const body = req.body;
@@ -233,7 +237,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
           <td style="padding: 10px 0; font-weight: bold;">
-            <img src="/public/images/airline.png" style="width: 20px; height: 20px; vertical-align: middle;"
+            <img src="${airlineUrl}"
+            style="width: 20px; height: 20px; vertical-align: middle;"
              alt="${returnFlight.airlineName}" /> ${returnFlight.flightNumber}
           </td>
           <td style="padding: 10px 0; text-align: right; color: #777;">
