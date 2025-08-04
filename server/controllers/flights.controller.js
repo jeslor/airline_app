@@ -141,18 +141,19 @@ const bookFlight = asyncWrapper(async (req, res) => {
     <hr style="margin: 30px 0;" />
 
     <!-- ✅ Updated Flight Details Section (Styled like airline itinerary) -->
-    <div style="font-size: 15px; border: 1px solid #ddd; border-radius: 6px; padding: 20px; background: #fff;">
+    <div style="font-size: 14px; border: 1px solid #ddd; border-radius: 6px; padding: 20px; background: #fff;">
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-        <tr style="background-color: #e6f2e6;">
+        <tr style="background-color: #f8dddd;">
           <td style="padding: 10px; font-weight: bold;">Reservation code</td>
           <td style="padding: 10px; text-align: right;">${bookingReference}</td>
         </tr>
       </table>
 
       <!-- Outbound -->
+     <div style="margin-bottom: 20px; border-bottom: 3px solid #e4e4e4;  border-top: 3px solid #e4e4e4;">
       <h3 style="margin-bottom: 0;">
         ${outboundFlight.departureCity.toUpperCase()} - ${outboundFlight.arrivalCity.toUpperCase()}
-        <span style="float: right; color: green;">CONFIRMED</span>
+        <span style="float: right; color: #9a0507;">CONFIRMED</span>
       </h3>
       <p style="margin-top: 5px;">
         ${outboundFlight.departureDate} – ${outboundFlight.arrivalDate}
@@ -166,6 +167,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
           "N/A"
         }
       </p>
+     </div>
 
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
@@ -175,12 +177,16 @@ const bookFlight = asyncWrapper(async (req, res) => {
               ${outboundFlight.flightNumber}
             </div>
           </td>
+         
           <td style="padding: 10px 0; text-align: right; color: #777;">
             Please verify flight times prior to departure
           </td>
         </tr>
         <tr>
           <td><strong>${outboundFlight.departureCity}</strong></td>
+           <td>
+          <img src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/arrow.png" alt="Quencer Airlines" style="24px/>
+          </td>
           <td style="text-align: right;"><strong>${
             outboundFlight.arrivalCity
           }</strong></td>
@@ -201,9 +207,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
         <tr>
-          <td>${generateCabinZone()} &nbsp; • &nbsp; Class: ${
-        outboundFlight.classCode
-      }</td>
+          <td>${generateCabinZone()} &nbsp; </td>
           <td style="text-align: right;">Aircraft: ${
             outboundFlight.aircraftType
           }</td>
@@ -218,9 +222,10 @@ const bookFlight = asyncWrapper(async (req, res) => {
         Frequent Flyer: ${passenger.frequentFlyerNumber || "N/A"}</p>
 
       <!-- Return -->
+      <div style="margin-bottom: 20px; border-bottom: 3px solid #e4e4e4;  border-top: 3px solid #e4e4e4;">
       <h3 style="margin-bottom: 0;">
         ${returnFlight.departureCity.toUpperCase()} - ${returnFlight.arrivalCity.toUpperCase()}
-        <span style="float: right; color: green;">CONFIRMED</span>
+        <span style="float: right; color: #9a0507;">CONFIRMED</span>
       </h3>
       <p style="margin-top: 5px;">
         ${returnFlight.departureDate}
@@ -234,6 +239,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
            "N/A"
          }
       </p>
+      </div>
 
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
@@ -249,6 +255,9 @@ const bookFlight = asyncWrapper(async (req, res) => {
         </tr>
         <tr>
           <td><strong>${returnFlight.departureCity}</strong></td>
+            <td>
+          <img src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/arrow.png" alt="Quencer Airlines" style="24px/>
+          </td>
           <td style="text-align: right;"><strong>${
             returnFlight.arrivalCity
           }</strong></td>
@@ -267,9 +276,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
         <tr>
-          <td>${generateCabinZone()} &nbsp; • &nbsp; Class: ${
-        returnFlight.classCode
-      }</td>
+          <td>${generateCabinZone()} &nbsp; </td>
           <td style="text-align: right;">Aircraft: ${
             returnFlight.aircraftType
           }</td>
