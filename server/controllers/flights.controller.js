@@ -170,7 +170,10 @@ const bookFlight = asyncWrapper(async (req, res) => {
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
           <td style="padding: 10px 0; font-weight: bold;">
-            ${outboundFlight.airlineName}, ${outboundFlight.flightNumber}
+             <div style="display: flex; align-items: center;">
+              <img src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/airline.png" alt="Quencer Airlines" style="width: 26px; padding-right: 5px;"/>
+              ${outboundFlight.flightNumber}
+            </div>
           </td>
           <td style="padding: 10px 0; text-align: right; color: #777;">
             Please verify flight times prior to departure
@@ -210,7 +213,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
         </tr>
       </table>
 
-      <p><strong>${passenger.fullName}</strong><br/>
+      <p><strong>${passenger.firstName} ${passenger.lastName}</strong><br/>
         Seat(s): ${generateSeatNumbers()}<br/>
         Frequent Flyer: ${passenger.frequentFlyerNumber || "N/A"}</p>
 
@@ -235,8 +238,10 @@ const bookFlight = asyncWrapper(async (req, res) => {
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
         <tr>
           <td style="padding: 10px 0; font-weight: bold;">
-            <img src="/images/airline.png" alt="Quencer Airlines" style="width: 20px;"/>
-            ${returnFlight.flightNumber}
+            <div style="display: flex; align-items: center;">
+              <img src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/airline.png" alt="Quencer Airlines" style="width: 26px; padding-right: 5px;"/>
+              ${returnFlight.flightNumber}
+            </div>
           </td>
           <td style="padding: 10px 0; text-align: right; color: #777;">
             Please verify flight times prior to departure
@@ -274,7 +279,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
         </tr>
       </table>
 
-      <p><strong>${passenger.fullName} ${passenger.lastName}</strong><br/>
+      <p><strong>${passenger.firstName} ${passenger.lastName}</strong><br/>
         Seat(s): ${generateSeatNumbers()}<br/>
         Frequent Flyer: ${passenger.frequentFlyerNumber || "N/A"}</p>
     </div>
