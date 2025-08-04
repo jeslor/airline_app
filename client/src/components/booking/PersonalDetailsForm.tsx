@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Icon } from "@iconify/react";
+import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -35,7 +36,7 @@ export function PersonalDetailsForm() {
       setIsSubmitting(true);
       setBookingData({ ...bookingData, passenger: data });
 
-      const flightBooked = await fetch("/api/book-flight", {
+      const response = await fetch("http://localhost:3000/api/book-flight", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,9 +44,19 @@ export function PersonalDetailsForm() {
         body: JSON.stringify({
           ...bookingData,
           passenger: data,
+          bookingDate: format(new Date().toISOString(), "yyyy-MM-dd"),
+          bookingTime: format(new Date().toISOString(), "HH:mm"),
         }),
       });
+
+      const flightBooked = await response.json();
+      console.log("Flight booked response:", flightBooked);
+
+      if (!flightBooked.ok) {
+        throw new Error("Failed to book flight");
+      }
     } catch (error) {
+      console.log("Error booking flight:", error);
     } finally {
       setIsSubmitting(false);
     }
