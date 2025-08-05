@@ -142,10 +142,8 @@ export function PersonalDetailsForm() {
                 <FormControl>
                   <Input placeholder="" {...field} />
                 </FormControl>
-                <FormDescription>
-                  This is your public display name.
-                </FormDescription>
-                <FormMessage />
+
+                <FormMessage className="text-[10px]" />
               </FormItem>
             )}
           />
@@ -158,10 +156,8 @@ export function PersonalDetailsForm() {
                 <FormControl>
                   <Input placeholder="" {...field} />
                 </FormControl>
-                <FormDescription>
-                  This is your public display name.
-                </FormDescription>
-                <FormMessage />
+
+                <FormMessage className="text-[10px]" />
               </FormItem>
             )}
           />
@@ -174,10 +170,8 @@ export function PersonalDetailsForm() {
                 <FormControl>
                   <Input placeholder="" {...field} />
                 </FormControl>
-                <FormDescription>
-                  This is your public display email.
-                </FormDescription>
-                <FormMessage />
+
+                <FormMessage className="text-[12px]" />
               </FormItem>
             )}
           />
@@ -190,10 +184,8 @@ export function PersonalDetailsForm() {
                 <FormControl>
                   <Input placeholder="" {...field} />
                 </FormControl>
-                <FormDescription>
-                  This is your public display country.
-                </FormDescription>
-                <FormMessage />
+
+                <FormMessage className="text-[10px]" />
               </FormItem>
             )}
           />
@@ -206,10 +198,8 @@ export function PersonalDetailsForm() {
                 <FormControl>
                   <Input placeholder="" {...field} />
                 </FormControl>
-                <FormDescription>
-                  This is your public display phone number.
-                </FormDescription>
-                <FormMessage />
+
+                <FormMessage className="text-[10px]" />
               </FormItem>
             )}
           />
