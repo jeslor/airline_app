@@ -17,6 +17,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { personalDetailsSchema } from "@/schemas/PersonalDetailsSchema";
 import { useFlightContext } from "../providers/FlightProvider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Label } from "@/components/ui/label";
 
 export function PersonalDetailsForm() {
   const {
@@ -29,6 +37,14 @@ export function PersonalDetailsForm() {
   } = useFlightContext();
   const form = useForm({
     resolver: zodResolver(personalDetailsSchema),
+    defaultValues: {
+      title: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      country: "",
+      phoneNumber: "",
+    },
   });
 
   const onSubmit = async (data: z.infer<typeof personalDetailsSchema>) => {
@@ -94,8 +110,28 @@ export function PersonalDetailsForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-8 flex flex-col items-center"
+        className="space-y-8 flex flex-col items-start"
       >
+        <div className="flex flex-col items-center w-fit gap-y-1">
+          <Label htmlFor="passengers">Title</Label>
+          <Select
+            defaultValue=""
+            onValueChange={(value) => {
+              form.setValue("title", value);
+            }}
+          >
+            <SelectTrigger id="title">
+              <SelectValue placeholder="Select title" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Mr">Mr</SelectItem>
+              <SelectItem value="Mrs">Mrs</SelectItem>
+              <SelectItem value="Miss">Miss</SelectItem>
+              <SelectItem value="Dr">Dr</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pb-6">
           <FormField
             control={form.control}

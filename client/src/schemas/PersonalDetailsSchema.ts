@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const personalDetailsSchema = z.object({
+  title: z.string().min(2, {
+    message: "Your title must be at least 2 characters.",
+  }),
   firstName: z.string().min(2, {
     message: "Your first name must be at least 2 characters.",
   }),

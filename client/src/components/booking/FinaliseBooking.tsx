@@ -6,6 +6,8 @@ import { PersonalDetailsForm } from "./PersonalDetailsForm";
 
 const FinalizeBooking = () => {
   const { bookingData } = useFlightContext();
+  console.log("Booking Data in FinalizeBooking:", bookingData);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
