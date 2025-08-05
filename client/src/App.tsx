@@ -1,10 +1,10 @@
-import AvailableFlights from "./components/Flights/AvailableFlights";
+import AvailableFlights from "./components/flights/AvailableFlights.tsx";
 import logo from "/images/quencer_logo.webp";
 import GlobeWrapper from "./components/Globe/GlobeWrapper";
-import FinalizeBooking from "./components/Booking/FinalizeBooking.tsx";
+import FinalizeBooking from "./components/booking/FinalizeBooking";
 import { useFlightContext } from "./components/providers/FlightProvider";
-import SearchFlights from "./components/Booking/SearchFlights.tsx";
-import BookingBubble from "./components/Booking/BookingBubble.tsx";
+import BookingBubble from "./components/booking/BookingBubble";
+import SearchFlights from "./components/forms/SearchFlights";
 
 const App = () => {
   const { sections, bookingData, isSearchingFlights } = useFlightContext();

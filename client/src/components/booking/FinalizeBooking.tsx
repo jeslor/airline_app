@@ -1,8 +1,8 @@
-import { Flights } from "../Flights/Flights";
 import { format } from "date-fns";
 import { useFlightContext } from "../providers/FlightProvider";
 import { motion } from "framer-motion";
-import { PersonalDetailsForm } from "./PersonalDetailsForm";
+import { PersonalDetailsForm } from "../forms/PersonalDetailsForm";
+import Flights from "../flights/Flights";
 
 const FinalizeBooking = () => {
   const { bookingData } = useFlightContext();

@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { useFlightContext } from "../providers/FlightProvider";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-export function Flights({ flights }: { flights: any[] }) {
+function Flights({ flights }: { flights: any[] }) {
   const { setBookingData, bookingData, sections, handleContinueBooking } =
     useFlightContext();
   const handleBookFlight = (flight: any) => {
@@ -184,3 +184,5 @@ export function Flights({ flights }: { flights: any[] }) {
     </div>
   );
 }
+
+export default Flights;
