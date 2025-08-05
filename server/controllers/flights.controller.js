@@ -131,7 +131,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
     await transporter.sendMail({
       from: `"Quencer Airlines" <${process.env.EMAIL_USER}>`,
       to: `${bookingData.passenger.email}`,
-      subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.firstName} ${passenger.lastName}`,
+      subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.title} ${passenger.firstName} ${passenger.lastName}`,
       html: `<div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6;">
   <div style="margin: auto; background-color: #fff; border-radius: 8px; padding-top: 20px; padding-bottom: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
 
