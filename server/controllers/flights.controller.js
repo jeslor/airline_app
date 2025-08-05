@@ -82,32 +82,40 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     const bookingReference = generateBookingReference();
 
-    // const { default: chromium } = await import("@sparticuz/chromium");
+    const { default: chromium } = await import("@sparticuz/chromium");
 
-    // const browser = await puppeteer.launch({
-    //   args: chromium.args,
-    //   executablePath: await chromium.executablePath(),
-    //   headless: chromium.headless,
-    // });
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
 
-    // /* STEP 1: Generate Child PDF */
-    // const ticketPage = await browser.newPage();
-    // const ticketHtml = TicketDetailsTemplate(bookingData);
+    /* STEP 1: Generate Child PDF */
+    const ticketPage = await browser.newPage();
+    const ticketHtml = TicketDetailsTemplate(
+      passenger,
+      outboundFlight,
+      returnFlight,
+      totalPrice,
+      bookingReference,
+      bookingDate,
+      bookingTime
+    );
 
-    // await ticketPage.setContent(ticketHtml, {
-    //   waitUntil: "networkidle2",
-    //   timeout: 120000,
-    // });
+    await ticketPage.setContent(ticketHtml, {
+      waitUntil: "networkidle2",
+      timeout: 120000,
+    });
 
-    // const ticketPdfBuffer = await ticketPage.pdf({
-    //   format: "A4",
-    //   printBackground: true,
-    //   margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
-    // });
+    const ticketPdfBuffer = await ticketPage.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+    });
 
-    // await ticketPage.close(); // Close this page after use
+    await ticketPage.close(); // Close this page after use
 
-    // await browser.close();
+    await browser.close();
 
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -357,13 +365,13 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
 
       `,
-      // attachments: [
-      //   {
-      //     filename: "flight ticket.pdf",
-      //     content: ticketPdfBuffer,
-      //     contentType: "application/pdf",
-      //   },
-      // ],
+      attachments: [
+        {
+          filename: `ticket-${bookingReference}.pdf`,
+          content: ticketPdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
     });
 
     res.json({

@@ -38,3 +38,14 @@ export function generateCabinZone() {
   const zone = Math.floor(Math.random() * 5) + 1; // Generates 1–5
   return `Zone ${zone}`;
 }
+
+export function generateTaxesAndFees(price) {
+  const taxRate = 0.15; // 15% tax rate
+  const fees = 50; // Flat fee of $50
+  const tax = price * taxRate;
+  return {
+    tax: parseFloat(tax.toFixed(2)),
+    fees: fees,
+    total: parseFloat((price + tax + fees).toFixed(2)),
+  };
+}
