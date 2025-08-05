@@ -28,6 +28,7 @@ import { useState } from "react";
 import SearchingForFlights from "../Loading/SearchingForFlights";
 
 export function PersonalDetailsForm() {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const {
     setBookingData,
     bookingData,
@@ -54,7 +55,7 @@ export function PersonalDetailsForm() {
       setIsSubmitting(true);
       setBookingData({ ...bookingData, passenger: data });
 
-      const response = await fetch("http://localhost:3000/api/book-flight", {
+      const response = await fetch(`${apiUrl}/book-flight`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
