@@ -3,6 +3,6 @@ const router = express.Router();
 import { bookFlight, getFlights } from "../controllers/flights.controller.js";
 
 router.post("/flights", getFlights);
-router.post("/book-flight", bookFlight);
+router.post("/book", bookFlight);
 
 export default router;
