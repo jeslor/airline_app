@@ -85,7 +85,9 @@ const bookFlight = asyncWrapper(async (req, res) => {
     const { default: chromium } = await import("@sparticuz/chromium");
 
     const browser = await puppeteer.launch({
-      headless: "new",
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
     /* STEP 1: Generate Child PDF */
