@@ -28,6 +28,7 @@ const getFlights = asyncWrapper(async (req, res) => {
     - Make sure you return at least 7 options.
     - flight numbers (formatted as QF####), departure/arrival times and dates (human-readable), airport codes, cities, duration, and the airline (all renamed to "Quencer Airlines").
     - make sure you arrange the information for example Departure , arrival and any layovers in individual properties.
+    - make sure the layovers are labeled as layovers and not layover.
     -This information is going to be used to generate a demo flight ticket so include the dates and times in a human-readable format, plus other relevant details.
 `;
 
@@ -166,7 +167,11 @@ const bookFlight = asyncWrapper(async (req, res) => {
       <p style="margin-top: 5px;">
         ${outboundFlight.departureDate} – ${outboundFlight.arrivalDate}
         &nbsp; • &nbsp; ${outboundFlight.flightDuration} &nbsp; • &nbsp;
-        ${outboundFlight.isNonStop ? "Non Stop" : "With Stops"}
+        ${
+          outboundFlight.isNonStop || outboundFlight.layovers.length === 0
+            ? "Non Stop"
+            : "With Stops"
+        }
         &nbsp; • &nbsp; ${
           (outboundFlight.layovers.length > 0 &&
             outboundFlight.layovers
@@ -236,10 +241,14 @@ const bookFlight = asyncWrapper(async (req, res) => {
       <p style="margin-top: 5px;">
         ${returnFlight.departureDate}
         &nbsp; • &nbsp; ${returnFlight.flightDuration}
-        &nbsp; • &nbsp; ${returnFlight.isNonStop ? "Non Stop" : "With Stops"}
+        &nbsp; • &nbsp; ${
+          returnFlight.isNonStop || returnFlight.layovers.length === 0
+            ? "Non Stop"
+            : "With Stops"
+        }
          &nbsp; • &nbsp; ${
-           (outboundFlight.layovers.length > 0 &&
-             outboundFlight.layovers
+           (returnFlight.layovers.length > 0 &&
+             returnFlight.layovers
                .map((layover) => `${layover.city} (${layover.duration})`)
                .join(", ")) ||
            "N/A"
@@ -379,6 +388,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
       status: 200,
       data: {
         message: "Booking successful",
+        bookingStatus: "confirmed",
         bookingReference: bookingReference || "To be assigned",
         passenger: {
           firstName: passenger.firstName,
@@ -397,7 +407,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
     }
   } catch (error) {
     console.error("Error in booking flight:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error", data: error });
   }
 });
 
