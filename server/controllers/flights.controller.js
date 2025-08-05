@@ -88,7 +88,9 @@ const bookFlight = asyncWrapper(async (req, res) => {
     });
 
     /* STEP 1: Generate Child PDF */
-    const currentPrice = Math.floor(totalPrice);
+    const cleanedPrice = totalPrice.replace(/,/g, "");
+    const currentPrice = Math.floor(parseFloat(cleanedPrice));
+
     const ticketPage = await browser.newPage();
     const ticketHtml = TicketDetailsTemplate(
       passenger,
