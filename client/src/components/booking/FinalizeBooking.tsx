@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { useFlightContext } from "../providers/FlightProvider";
 import { motion } from "framer-motion";
 import { PersonalDetailsForm } from "../forms/PersonalDetailsForm";
-import Flights from "../flights/flights";
+import Flights from "../BookingFlights/flights";
 
 const FinalizeBooking = () => {
   const { bookingData } = useFlightContext();

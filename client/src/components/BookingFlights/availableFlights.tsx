@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useFlightContext } from "../providers/FlightProvider";
 import SearchingForFlights from "../Loading/SearchingForFlights";
-import Flights from "./Flights";
+import Flights from "./flights";
 
 const AvailableFlights = () => {
   const { flightData, sections, isSearchingFlights } = useFlightContext();
