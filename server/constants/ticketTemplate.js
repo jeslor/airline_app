@@ -400,12 +400,14 @@ const TicketDetailsTemplate = (
             <td>
               <strong>Base Fare:</strong>
               <br />
-              $${currentPrice - currentPrice * 0.15 - 50}
+              $${generateTaxesAndFees(currentPrice).fees}
             </td>
             <td>
               <strong>Taxes & Fees:</strong>
               <br />
-              $${currentPrice * 0.15} (15% tax) + $50 (flat fee)
+              $${
+                generateTaxesAndFees(currentPrice).tax
+              } (15% tax) + $50 (flat fee)
             </td>
           </tr>
           <tr>
