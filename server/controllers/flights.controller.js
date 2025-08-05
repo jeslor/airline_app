@@ -141,7 +141,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
     <hr style="margin: 30px 0;" />
 
     <!-- ✅ Updated Flight Details Section (Styled like airline itinerary) -->
-    <div style="font-size: 14px; border: 1px solid #ddd; border-radius: 6px; padding: 20px; background: #fff;">
+    <div style="font-size: 14px; border: 1px solid #ddd; border-radius: 6px; padding: 20px; background: #fff; width:fit-content; margin: auto;">
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
         <tr style="background-color: #f8dddd;">
           <td style="padding: 10px; font-weight: bold;">Reservation code</td>
@@ -173,7 +173,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
         <tr>
           <td style="padding: 10px 0; font-weight: bold;">
              <div style="display: flex; align-items: center;">
-              <img src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/airline.png" alt="Quencer Airlines" style="width: 26px; padding-right: 5px;"/>
+              <img draggable="false" src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/airline.png" alt="Quencer Airlines" style="width: 26px; padding-right: 5px;"/>
               ${outboundFlight.flightNumber}
             </div>
           </td>
@@ -184,9 +184,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
         </tr>
         <tr>
           <td><strong>${outboundFlight.departureCity}</strong></td>
-           <td>
-          <img src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/arrow.png" alt="Quencer Airlines" style="24px/>
-          </td>
+        
           <td style="text-align: right;"><strong>${
             outboundFlight.arrivalCity
           }</strong></td>
@@ -245,7 +243,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
         <tr>
           <td style="padding: 10px 0; font-weight: bold;">
             <div style="display: flex; align-items: center;">
-              <img src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/airline.png" alt="Quencer Airlines" style="width: 26px; padding-right: 5px;"/>
+              <img draggable="false" src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/airline.png" alt="Quencer Airlines" style="width: 26px; padding-right: 5px;"/>
               ${returnFlight.flightNumber}
             </div>
           </td>
@@ -255,9 +253,6 @@ const bookFlight = asyncWrapper(async (req, res) => {
         </tr>
         <tr>
           <td><strong>${returnFlight.departureCity}</strong></td>
-            <td>
-          <img src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/arrow.png" alt="Quencer Airlines" style="24px/>
-          </td>
           <td style="text-align: right;"><strong>${
             returnFlight.arrivalCity
           }</strong></td>
@@ -293,34 +288,69 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     <hr style="margin: 30px 0;" />
 
-    <p><strong>Total Price:</strong> $${totalPrice}</p>
+    <!-- 💰 Total Price -->
+<div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px; border: 1px solid #e0e0e0;">
+  <h3 style="margin: 0; color: #2c3e50;">Total Price</h3>
+  <p style="font-size: 20px; font-weight: bold; color: #27ae60; margin-top: 5px;">
+    $${totalPrice}
+  </p>
+</div>
 
-    <h3 style="color: #2c3e50;"> Passenger Details</h3>
-    <ul style="padding-left: 20px;">
-      <li><strong>Name:</strong> ${passenger.firstName} ${
+<!-- 👤 Passenger Details -->
+<div style="background-color: #fefefe; padding: 20px; border-radius: 6px; border: 1px solid #e0e0e0; margin-bottom: 30px;">
+  <h3 style="margin-top: 0; color: #2c3e50;">Passenger Information</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #333;">
+    <tr>
+      <td style="padding: 8px 0;"><strong>Name:</strong></td>
+      <td style="padding: 8px 0;">${passenger.firstName} ${
         passenger.lastName
-      }</li>
-      <li><strong>Email:</strong> ${passenger.email}</li>
-      <li><strong>Phone:</strong> ${passenger.phoneNumber}</li>
-      <li><strong>Country:</strong> ${passenger.country}</li>
-    </ul>
+      }</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;"><strong>Email:</strong></td>
+      <td style="padding: 8px 0;">${passenger.email}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;"><strong>Phone:</strong></td>
+      <td style="padding: 8px 0;">${passenger.phoneNumber}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;"><strong>Country:</strong></td>
+      <td style="padding: 8px 0;">${passenger.country}</td>
+    </tr>
+    ${
+      passenger.frequentFlyerNumber
+        ? `<tr><td style="padding: 8px 0;"><strong>Frequent Flyer:</strong></td><td style="padding: 8px 0;">${passenger.frequentFlyerNumber}</td></tr>`
+        : ""
+    }
+  </table>
+</div>
 
-    <p>Please ensure to arrive at the airport at least <strong>2 hours</strong> before your flight time. You’ll receive a digital boarding pass and any additional updates via email closer to your departure date.</p>
+<!-- 📣 Advisory -->
+<p style="font-size: 15px; line-height: 1.6;">
+  Please arrive at the airport at least <strong>2 hours</strong> before your scheduled departure time. Your digital boarding pass and final updates will be sent via email closer to your flight date.
+</p>
 
-    <p>Should you need to make changes or have any inquiries, don’t hesitate to reach out to our support team.</p>
+<p style="font-size: 15px; line-height: 1.6;">
+  For changes or questions regarding your reservation, feel free to contact our support team at any time.
+</p>
 
-    <p style="margin-top: 30px;">Safe travels,<br/>
-      <strong>The Quencer Airlines Team</strong>
-    </p>
+<!-- 👋 Closing -->
+<p style="margin-top: 30px; font-size: 15px;">
+  Wishing you a smooth and enjoyable journey,<br/>
+  <strong>The Quencer Airlines Team</strong>
+</p>
 
-    <blockquote style="margin: 30px 0; padding: 15px; background-color: #f1f1f1; border-left: 5px solid #cccccc;">
-      <em>"The sky is not the limit — it's where your story begins."</em>
-    </blockquote>
+<!-- 💬 Quote -->
+<blockquote style="margin: 30px 0; padding: 15px 20px; background-color: #f1f1f1; border-left: 5px solid #cccccc; font-style: italic;">
+  "The sky is not the limit — it's where your story begins."
+</blockquote>
 
-    <p>
-      📧 <a href="mailto:support@quencerairlines.com" style="color: #1a73e8;">support@quencerairlines.com</a><br/>
-      🌐 <a href="https://www.quencerairlines.com" style="color: #1a73e8;">www.quencerairlines.com</a>
-    </p>
+<!-- 📞 Contact -->
+<p style="font-size: 14px; color: #555;">
+  📧 <a href="mailto:support@quencerairlines.com" style="color: #1a73e8;">support@quencerairlines.com</a><br/>
+  🌐 <a href="https://www.quencerairlines.com" style="color: #1a73e8;">www.quencerairlines.com</a>
+</p>
 
   </div>
 </div>
