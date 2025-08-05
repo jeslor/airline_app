@@ -1,4 +1,4 @@
-import AvailableFlights from "./components/flights/AvailableFlights.tsx";
+import AvailableFlights from "./components/flights/availableFlights.tsx";
 import logo from "/images/quencer_logo.webp";
 import GlobeWrapper from "./components/Globe/GlobeWrapper";
 import FinalizeBooking from "./components/booking/FinalizeBooking";
