@@ -6,7 +6,6 @@ import Flights from "../BookingFlights/flights";
 
 const FinalizeBooking = () => {
   const { bookingData } = useFlightContext();
-  console.log("Booking Data in FinalizeBooking:", bookingData);
 
   return (
     <motion.div

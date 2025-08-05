@@ -55,7 +55,7 @@ export function PersonalDetailsForm() {
       setIsSubmitting(true);
       setBookingData({ ...bookingData, passenger: data });
 
-      const response = await fetch(`${apiUrl}/book-flight`, {
+      const response = await fetch(`${apiUrl}/book`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
