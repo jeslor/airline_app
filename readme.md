@@ -55,13 +55,13 @@ Follow these steps to set up and run both the frontend and backend components of
 
 # Backend .env variables
 
-PORT=5000 # Or any desired port for the backend API
+- **PORT=5000 #** Or any desired port for the backend API
 
-EMAIL_HOST=smtp.your-email-provider.com
-EMAIL_PORT=587 # or 465 for SSL/TLS
-EMAIL_SECURE=false # true for 465, false for 587 (TLS requires STARTTLS)
-EMAIL_USER=your_email@example.com
-EMAIL_PASS=your_email_password
+- **EMAIL_HOST=** smtp.your-email-provider.com
+- **EMAIL_PORT=** 587 # or 465 for SSL/TLS
+- **EMAIL_SECUR** E=false # true for 465, false for 587 (TLS requires STARTTLS)
+- **EMAIL_USER=** your_email@example.com
+- **EMAIL_PASS=** your_email_password
 
 ### 1. Clone the Repository
 
