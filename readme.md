@@ -1,6 +1,6 @@
 # ✈️ Quencer Airlines Booking Platform
 
----
+![UI](./image/airline.jpg)
 
 ## ✨ Project Overview
 
