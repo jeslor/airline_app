@@ -66,6 +66,6 @@ Follow these steps to set up and run both the frontend and backend components of
 ### 1. Clone the Repository
 
 ```bash
-git clone <https://github.com/jeslor/airline_app>
-cd quencer-airlines-platform # Adjust if your main directory name is different
+git clone [https://github.com/jeslor/airline_app](https://github.com/jeslor/airline_app)
+cd airline_app
 ```
