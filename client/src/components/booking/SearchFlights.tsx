@@ -24,7 +24,7 @@ import { flightBookingSchema } from "@/schemas/FlightBookingSchema";
 import { useFlightContext } from "../providers/FlightProvider";
 import { useState } from "react";
 
-export function SearchFlights() {
+const SearchFlights = () => {
   const { setFlightData, setIsSearchingFlights, sections } = useFlightContext();
   const [open, setOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
@@ -363,4 +363,6 @@ export function SearchFlights() {
       </div>
     </div>
   );
-}
+};
+
+export default SearchFlights;

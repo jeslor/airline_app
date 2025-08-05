@@ -121,5 +121,3 @@ const BookingBubble = () => {
 };
 
 export default BookingBubble;
-
-// Helper Icons (you'd typically import these from 'lucide-react' or a similar library)
