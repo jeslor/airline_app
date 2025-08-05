@@ -1,7 +1,11 @@
 import { Plane } from "lucide-react"; // Still using lucide-react for the Plane icon
 import { motion } from "framer-motion";
 
-export default function SearchingForFlights(): any {
+export default function SearchingForFlights({
+  message,
+}: {
+  message: string;
+}): any {
   const rotationDuration = 2.3;
 
   const containerVariants = {
@@ -31,7 +35,7 @@ export default function SearchingForFlights(): any {
       </motion.div>
 
       <div className="text-[15px] font-medium text-gray-700 flex items-center space-x-1">
-        <span>Searching for better flight to your preferred destination</span>
+        <span>{message}</span>
         <AnimatedDots />
       </div>
     </div>

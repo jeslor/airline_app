@@ -29,7 +29,7 @@ const AvailableFlights = () => {
       {isSearchingFlights ? (
         <div className="text-center ">
           <div className="flex justify-center mt-4">
-            <SearchingForFlights />
+            <SearchingForFlights message="Searching for better flight to your preferred destination" />
           </div>
         </div>
       ) : allFlights.outboundFlights.length !== 0 &&
@@ -96,9 +96,10 @@ const AvailableFlights = () => {
         </>
       ) : (
         <div className="text-center">
-          <h3 className="text-[36px]">No flights available</h3>
-          <p className="text-gray-500">
-            Please try searching with different criteria.
+          <h3 className="text-[36px]">Start your Booking</h3>
+          <p className="text-gray-500 text-[14px]">
+            Please try choosing a current city and destination and then search
+            for the available flights.
           </p>
         </div>
       )}

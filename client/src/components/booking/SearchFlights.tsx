@@ -25,7 +25,7 @@ import { useFlightContext } from "../providers/FlightProvider";
 import { useState } from "react";
 
 export function SearchFlights() {
-  const { setFlightData, setIsSearchingFlights } = useFlightContext();
+  const { setFlightData, setIsSearchingFlights, sections } = useFlightContext();
   const [open, setOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
 
@@ -86,6 +86,13 @@ export function SearchFlights() {
       alert("Failed to fetch flights. Please try again later.");
     } finally {
       setIsSearchingFlights(false);
+    }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (sections.outboundFlights) {
+      form.handleSubmit(onSubmit)();
     }
   };
 
@@ -327,7 +334,12 @@ export function SearchFlights() {
             Flight Status
           </Button>
           <Button
-            disabled={!form.formState.isValid || form.formState.isSubmitting}
+            onClick={(e: any) => handleFormSubmit(e)}
+            disabled={
+              !form.formState.isValid ||
+              form.formState.isSubmitting ||
+              !sections.outboundFlights
+            }
             type="submit"
             className="bg-red-800 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-red-700 transition-colors duration-300 shadow-lg"
           >

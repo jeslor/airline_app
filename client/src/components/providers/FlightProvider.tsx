@@ -15,6 +15,8 @@ interface FlightContextType {
     totalPrice: string;
     bookingDate: string;
     bookingTime: string;
+    bookingStatus?: string;
+    bookingReference?: string;
   } | null;
   sections: any;
   setSections: (section: any) => void;
