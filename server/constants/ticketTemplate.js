@@ -1,14 +1,17 @@
-const { generateTicketNumber } = require("../utils/ticketAndBookingGenerator");
+import {
+  generateTaxesAndFees,
+  generateTicketNumber,
+} from "../utils/ticketAndBookingGenerator.js";
 
-const TicketDetailsTemplate = ({
+const TicketDetailsTemplate = (
   passenger,
   outboundFlight,
   returnFlight,
-  totalPrice,
+  currentPrice,
   bookingReference,
   bookingDate,
-  bookingTime,
-}) => `
+  bookingTime
+) => `
  <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -350,45 +353,41 @@ const TicketDetailsTemplate = ({
         <div class="section-title">Flight Details</div>
         <table class="flight-details-table">
           <tr>
-            <th>Flight</th>
-            <th>Date</th>
-            <th>Departure</th>
-            <th>Arrival</th>
-            <th>Class</th>
+            <th>Outbound Flight</th>
+            <th>Departure Date</th>
+            <th>Departure Time</th>
+            <th>Arrival Date</th>
+            <th>Arrival Time</th>
           </tr>
           <tr>
             <td>${outboundFlight.flightNumber} - CONFIRMED</td>
-            <td>${outboundFlight.date}</td>
-            <td>${outboundFlight.departureAirport}  ${
+            <td>${outboundFlight.departureDate}</td>
+            <td>${outboundFlight.departureCity} ${
   outboundFlight.departureTime
 }</td>
-            <td>${outboundFlight.arrivalAirport}  ${
-  outboundFlight.arrivalTime
-}</td>
-            <td>${outboundFlight.class}</td>
+            <td>${outboundFlight.arrivalDate}</td>
+            <td>${outboundFlight.arrivalCity} ${outboundFlight.arrivalTime}</td>
           </tr>
           <tr>
-            <th>Flight</th>
-            <th>Date</th>
-            <th>Departure</th>
-            <th>Arrival</th>
-            <th>Class</th>
+            <th>Return Flight</th>
+            <th>Departure Date</th>
+            <th>Departure Time</th>
+            <th>Arrival Date</th>
+            <th>Arrival Time</th>
           </tr>
           <tr>
             <td>${returnFlight.flightNumber} - CONFIRMED</td>
-            <td>${returnFlight.date}</td>
-            <td>${returnFlight.departureAirport} @ ${
+            <td>${returnFlight.departureDate}</td>
+            <td>${returnFlight.departureCity}  ${
   returnFlight.departureTime
 }</td>
-            <td>${returnFlight.arrivalAirport} @ ${
-  returnFlight.arrivalTime
-}</td>
-            <td>${returnFlight.class}</td>
+            <td>${returnFlight.arrivalDate}</td>
+            <td>${returnFlight.arrivalCity} ${returnFlight.arrivalTime}</td>
           </tr>
           <tr>
             <td colspan="5">
               <strong>Baggage Allowance:</strong>
-              ${flight.baggage || "25KG per passenger"}
+              ${"25KG x 2 per passenger"}
             </td>
           </tr>
         </table>
@@ -401,24 +400,24 @@ const TicketDetailsTemplate = ({
             <td>
               <strong>Base Fare:</strong>
               <br />
-              $${generateTaxesAndFees(totalPrice).base}
+              $${currentPrice - currentPrice * 0.15 - 50}
             </td>
             <td>
               <strong>Taxes & Fees:</strong>
               <br />
-              $${generateTaxesAndFees(totalPrice).taxes}
+              $${currentPrice * 0.15} (15% tax) + $50 (flat fee)
             </td>
           </tr>
           <tr>
             <td colspan="2" class="total-price">
               <strong>Total Price:</strong>
-              $${totalPrice}
+              $${currentPrice.toFixed(2)}
             </td>
           </tr>
           <tr>
             <td colspan="2">
               <strong>Payment Method:</strong>
-              ${fare.paymentMethod || "Credit Card"}
+              ${"Credit Card"}
             </td>
           </tr>
         </table>
@@ -455,4 +454,4 @@ const TicketDetailsTemplate = ({
 
 `;
 
-module.exports = TicketDetailsTemplate;
+export default TicketDetailsTemplate;

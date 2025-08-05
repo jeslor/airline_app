@@ -3,14 +3,13 @@ import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
 import puppeteer from "puppeteer";
 import nodemailer from "nodemailer";
-import fs from "fs";
-import path from "path";
 import {
   generateBookingReference,
   generateCabinZone,
   generateRandomTerminal,
   generateSeatNumbers,
 } from "../utils/ticketAndBookingGenerator.js";
+import TicketDetailsTemplate from "../constants/ticketTemplate.js";
 
 const getFlights = asyncWrapper(async (req, res) => {
   try {
@@ -85,18 +84,17 @@ const bookFlight = asyncWrapper(async (req, res) => {
     const { default: chromium } = await import("@sparticuz/chromium");
 
     const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      headless: "new",
     });
 
     /* STEP 1: Generate Child PDF */
+    const currentPrice = Math.floor(totalPrice);
     const ticketPage = await browser.newPage();
     const ticketHtml = TicketDetailsTemplate(
       passenger,
       outboundFlight,
       returnFlight,
-      totalPrice,
+      currentPrice,
       bookingReference,
       bookingDate,
       bookingTime

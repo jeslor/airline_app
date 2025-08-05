@@ -40,12 +40,13 @@ export function generateCabinZone() {
 }
 
 export function generateTaxesAndFees(price) {
+  console.log("Calculating taxes and fees for price:", price);
+
   const taxRate = 0.15; // 15% tax rate
   const fees = 50; // Flat fee of $50
-  const tax = price * taxRate;
+  const tax = Number(price) * taxRate;
   return {
     tax: parseFloat(tax.toFixed(2)),
     fees: fees,
-    total: parseFloat((price + tax + fees).toFixed(2)),
   };
 }
