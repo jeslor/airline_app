@@ -98,7 +98,11 @@ const SearchFlights = () => {
 
   return (
     <div className="bg-white min-h-[300px] w-full mx-auto max-w-[1200px] rounded-t-4xl rounded-b-2xl shadow-xl p-8">
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        autoComplete="off"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-8"
+      >
         <div className="flex justify-center mb-6 space-x-4">
           {["roundTrip", "oneWay", "multiCity"].map((type) => (
             <Button

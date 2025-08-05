@@ -66,10 +66,8 @@ export function PersonalDetailsForm() {
           bookingTime: format(new Date().toISOString(), "HH:mm"),
         }),
       });
-      console.log("response", response.status);
 
       const flightBooked = await response.json();
-      console.log("Flight booked response:", flightBooked);
 
       if (flightBooked.status !== 200) {
         throw new Error("Failed to book flight");
@@ -190,6 +188,7 @@ export function PersonalDetailsForm() {
       )}
       <Form {...form}>
         <form
+          autoComplete="off"
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-8 flex flex-col items-start"
         >
