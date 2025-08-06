@@ -10,7 +10,7 @@ const App = () => {
   const { sections, bookingData, isSearchingFlights } = useFlightContext();
   return (
     <div className="w-full">
-      <div className="bg-black   min-h-[60vh] lg:min-h-[100vh] relative">
+      <div className="bg-[#534a4a]   min-h-[60vh] lg:min-h-[100vh] relative">
         <Destinations />
       </div>
       <div className="bg-slate-200 flex flex-col items-center">
