@@ -1,5 +1,4 @@
 import logo from "/images/quencer_logo.webp";
-import GlobeWrapper from "./components/Globe/GlobeWrapper";
 import FinalizeBooking from "./components/booking/FinalizeBooking";
 import { useFlightContext } from "./components/providers/FlightProvider";
 import BookingBubble from "./components/booking/BookingBubble";
