@@ -5,12 +5,15 @@ import { useFlightContext } from "./components/providers/FlightProvider";
 import BookingBubble from "./components/booking/BookingBubble";
 import SearchFlights from "./components/forms/SearchFlights";
 import AvailableFlights from "./components/BookingFlights/availableFlights";
+import Destinations from "./components/Destinations/Destinations";
 
 const App = () => {
   const { sections, bookingData, isSearchingFlights } = useFlightContext();
   return (
     <div className="w-full">
-      <GlobeWrapper />
+      <div className="bg-black   min-h-[60vh] lg:min-h-[100vh] relative">
+        <Destinations />
+      </div>
       <div className="bg-slate-200 flex flex-col items-center">
         <div className="bg-white min-h-[300px] w-full mx-4 max-w-[1200px] max-auto -top-[200px] relative z-[3] rounded-t-4xl rounded-b-2xl">
           <SearchFlights />

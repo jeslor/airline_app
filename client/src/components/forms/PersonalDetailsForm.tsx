@@ -80,8 +80,8 @@ export function PersonalDetailsForm() {
         bookingReference: flightBooked.data.bookingReference,
       }));
       handleFlightBooked(true);
-    } catch (error) {
-      console.log("Error booking flight:", error);
+    } catch (error: any) {
+      console.log("Error booking flight:", error.data || error.message);
     } finally {
       setIsSubmitting(false);
     }
