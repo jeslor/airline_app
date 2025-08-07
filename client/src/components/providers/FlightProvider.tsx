@@ -29,6 +29,7 @@ interface FlightContextType {
     returnFlights?: boolean;
     finalBooking?: boolean;
   }) => void;
+  handleStartOver: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 const FlightContext = createContext<FlightContextType | undefined>(undefined);
 
@@ -88,6 +89,33 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const handleStartOver = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    localStorage.removeItem("bookingData");
+    localStorage.removeItem("flightData");
+    localStorage.removeItem("sections");
+    setSections({
+      outboundFlights: true,
+      returnFlights: false,
+      finalBooking: false,
+    });
+    setBookingData({
+      passenger: {},
+      outboundFlight: {},
+      returnFlight: {},
+      totalPrice: 0,
+      bookingStatus: "",
+      bookingId: "",
+      bookingDate: "",
+      bookingTime: "",
+      bookingReference: "",
+    });
+    setFlightData({
+      outboundFlights: [],
+      returnFlights: [],
+    });
+  };
+
   return (
     <FlightContext.Provider
       value={{
@@ -103,6 +131,9 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
         setIsSearchingFlights,
         handleContinueBooking,
         setIsSubmitting,
+        handleStartOver: handleStartOver as (
+          e: React.MouseEvent<HTMLButtonElement>
+        ) => void,
       }}
     >
       {children}

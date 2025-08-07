@@ -34,8 +34,7 @@ export function PersonalDetailsForm() {
     bookingData,
     isSubmitting,
     setIsSubmitting,
-    setSections,
-    setFlightData,
+    handleStartOver,
   } = useFlightContext();
   const form = useForm({
     resolver: zodResolver(personalDetailsSchema),
@@ -98,34 +97,6 @@ export function PersonalDetailsForm() {
       document.body.style.overflow = "auto";
       setFlightBooked(status);
     }
-  };
-
-  const handleStartOver = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    form.reset();
-    localStorage.removeItem("bookingData");
-    localStorage.removeItem("flightData");
-    localStorage.removeItem("sections");
-    setSections({
-      outboundFlights: true,
-      returnFlights: false,
-      finalBooking: false,
-    });
-    setBookingData({
-      passenger: {},
-      outboundFlight: {},
-      returnFlight: {},
-      totalPrice: 0,
-      bookingStatus: "",
-      bookingId: "",
-      bookingDate: "",
-      bookingTime: "",
-      bookingReference: "",
-    });
-    setFlightData({
-      outboundFlights: [],
-      returnFlights: [],
-    });
   };
 
   return (

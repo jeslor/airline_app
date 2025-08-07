@@ -26,7 +26,8 @@ import { useState } from "react";
 
 const SearchFlights = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
-  const { setFlightData, setIsSearchingFlights, sections } = useFlightContext();
+  const { setFlightData, setIsSearchingFlights, sections, handleStartOver } =
+    useFlightContext();
   const [open, setOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
 
@@ -92,9 +93,7 @@ const SearchFlights = () => {
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (sections.outboundFlights) {
-      form.handleSubmit(onSubmit)();
-    }
+    form.handleSubmit(onSubmit)();
   };
 
   return (
@@ -339,12 +338,11 @@ const SearchFlights = () => {
             Flight Status
           </Button>
           <Button
-            onClick={(e: any) => handleFormSubmit(e)}
-            disabled={
-              !form.formState.isValid ||
-              form.formState.isSubmitting ||
-              !sections.outboundFlights
-            }
+            onClick={(e: any) => {
+              handleStartOver(e);
+              handleFormSubmit(e);
+            }}
+            disabled={!form.formState.isValid || form.formState.isSubmitting}
             type="submit"
             className="bg-red-800 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-red-700 transition-colors duration-300 shadow-lg"
           >

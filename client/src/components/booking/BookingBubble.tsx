@@ -1,18 +1,35 @@
 // components/BookingBubble.tsx
 import { Icon } from "@iconify/react";
 import { useFlightContext } from "../providers/FlightProvider";
+import { useEffect, useState } from "react";
 
 const BookingBubble = () => {
   const { bookingData, handleContinueBooking, sections, setBookingData } =
     useFlightContext();
-  const { outboundFlight, returnFlight } = bookingData || {};
+
+  const [myBookingData, setMyBookingData] = useState<any>(null);
+  const [outboundFlight, setOutboundFlight] = useState(
+    myBookingData?.outboundFlight || null
+  );
+  const [returnFlight, setReturnFlight] = useState(
+    myBookingData?.returnFlight || null
+  );
   const totalCost =
     (bookingData?.outboundFlight?.price || 0) + (returnFlight?.price || 0);
 
-  // If no flights are selected, don't show the bubble
-  if (!outboundFlight && !returnFlight) {
-    return null;
-  }
+  useEffect(() => {
+    setMyBookingData({
+      ...bookingData,
+    });
+  }, [bookingData]);
+
+  useEffect(() => {
+    // Update outboundFlight and returnFlight when myBookingData changes
+    if (myBookingData) {
+      setOutboundFlight(myBookingData.outboundFlight || null);
+      setReturnFlight(myBookingData.returnFlight || null);
+    }
+  }, [myBookingData]);
 
   const completeBooking = () => {
     handleContinueBooking({
@@ -38,6 +55,10 @@ const BookingBubble = () => {
       })
     );
   };
+
+  console.log("BookingBubble - bookingData:", bookingData);
+  console.log("outboundFlight:", outboundFlight);
+  console.log("returnFlight:", returnFlight);
 
   return (
     <div className="shadow-2xl shadow-gray-800 py-4 px-4 md:px-8 bottom-6 rounded-[30px] bg-white w-full max-w-[900px] fixed  left-1/2 transform -translate-x-1/2 z-50 border border-gray-100 flex items-center justify-between gap-4">
