@@ -56,11 +56,10 @@ const BookingBubble = () => {
     );
   };
 
-  console.log("BookingBubble - bookingData:", bookingData);
   console.log("outboundFlight:", outboundFlight);
   console.log("returnFlight:", returnFlight);
 
-  return (
+  return outboundFlight && returnFlight ? (
     <div className="shadow-2xl shadow-gray-800 py-4 px-4 md:px-8 bottom-6 rounded-[30px] bg-white w-full max-w-[900px] fixed  left-1/2 transform -translate-x-1/2 z-50 border border-gray-100 flex items-center justify-between gap-4">
       {/* Flight Details Section */}
       <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -71,7 +70,7 @@ const BookingBubble = () => {
                 {outboundFlight.departureCity} to {outboundFlight.arrivalCity}
               </p>
               <p className="text-xs text-gray-600">
-                {outboundFlight.departureDate} - {outboundFlight.airline}
+                {outboundFlight.departureDate} - {outboundFlight.flightNumber}
               </p>
             </div>
             {sections.returnFlights ? (
@@ -99,7 +98,7 @@ const BookingBubble = () => {
                 {returnFlight.departureCity} to {returnFlight.arrivalCity}
               </p>
               <p className="text-xs text-gray-600">
-                {returnFlight.departureDate} - {returnFlight.airline}
+                {returnFlight.departureDate} - {returnFlight.flightNumber}
               </p>
             </div>
           </div>
@@ -124,8 +123,8 @@ const BookingBubble = () => {
 
       {/* Total Cost */}
       <div className="text-right flex-shrink-0">
-        {bookingData?.outboundFlight.flightNumber &&
-          bookingData?.returnFlight.flightNumber && (
+        {bookingData?.outboundFlight?.flightNumber &&
+          bookingData?.returnFlight?.flightNumber && (
             <button
               onClick={() => completeBooking()}
               className="bg-red-800 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-full w-fit sm:w-auto cursor-pointer"
@@ -138,6 +137,8 @@ const BookingBubble = () => {
         </p>
       </div>
     </div>
+  ) : (
+    <div className="hidden"></div>
   );
 };
 

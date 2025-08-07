@@ -26,7 +26,7 @@ import { useState } from "react";
 
 const SearchFlights = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
-  const { setFlightData, setIsSearchingFlights, handleStartOver } =
+  const { setFlightData, setIsSearchingFlights, sections, handleStartOver } =
     useFlightContext();
   const [open, setOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
