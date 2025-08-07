@@ -56,9 +56,6 @@ const BookingBubble = () => {
     );
   };
 
-  console.log("outboundFlight:", outboundFlight);
-  console.log("returnFlight:", returnFlight);
-
   return outboundFlight && returnFlight ? (
     <div className="shadow-2xl shadow-gray-800 py-4 px-4 md:px-8 bottom-6 rounded-[30px] bg-white w-full max-w-[900px] fixed  left-1/2 transform -translate-x-1/2 z-50 border border-gray-100 flex items-center justify-between gap-4">
       {/* Flight Details Section */}
