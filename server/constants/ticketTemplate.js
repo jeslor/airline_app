@@ -413,7 +413,7 @@ const TicketDetailsTemplate = (
           <tr>
             <td colspan="2" class="total-price">
               <strong>Total Price:</strong>
-              $${currentPrice.toFixed(2)}
+              $${currentPrice.toFixed(2).toLocaleString("en-US")}
             </td>
           </tr>
           <tr>
