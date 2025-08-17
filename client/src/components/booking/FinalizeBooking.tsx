@@ -3,12 +3,24 @@ import { useFlightContext } from "../providers/FlightProvider";
 import { motion } from "framer-motion";
 import { PersonalDetailsForm } from "../forms/PersonalDetailsForm";
 import Flights from "../BookingFlights/flights";
+import { useEffect } from "react";
 
 const FinalizeBooking = () => {
   const { bookingData } = useFlightContext();
 
+  useEffect(() => {
+    const finalizeBooking = document.getElementById("finalize-booking");
+    if (finalizeBooking) {
+      finalizeBooking.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, []);
+
   return (
     <motion.div
+      id="finalize-booking"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
