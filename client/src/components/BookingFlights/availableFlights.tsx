@@ -22,7 +22,7 @@ const AvailableFlights = () => {
         block: "start",
       });
     }
-  }, [isSearchingFlights]);
+  }, [isSearchingFlights, sections]);
 
   useEffect(() => {
     if (
