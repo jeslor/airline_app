@@ -12,6 +12,19 @@ const AvailableFlights = () => {
   });
 
   useEffect(() => {
+    const availableFlightModal = document.getElementById("available-flights");
+    if (
+      (availableFlightModal && isSearchingFlights) ||
+      (availableFlightModal && flightData.outboundFlights.length > 0)
+    ) {
+      availableFlightModal.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [isSearchingFlights]);
+
+  useEffect(() => {
     if (
       (flightData.outboundFlights && flightData.outboundFlights.length > 0) ||
       (flightData.returnFlights && flightData.returnFlights.length > 0)
@@ -25,7 +38,10 @@ const AvailableFlights = () => {
     }
   }, [flightData]);
   return (
-    <div className="max-w-[1380px] mx-auto mt-10 space-y-6 px-4 sm:px-6 lg:px-8 w-full min-h-[400px]">
+    <div
+      id="available-flights"
+      className="max-w-[1380px] mx-auto mt-10 space-y-6 px-4 sm:px-6 lg:px-8 w-full min-h-[400px]"
+    >
       {isSearchingFlights ? (
         <div className="text-center ">
           <div className="flex justify-center mt-4">

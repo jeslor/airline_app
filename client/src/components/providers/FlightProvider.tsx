@@ -22,8 +22,8 @@ interface FlightContextType {
   setSections: (section: any) => void;
   setBookingData: (data: any) => void;
   setFlightData: (data: any) => void;
-  setIsSearchingFlights: (isSearching: boolean) => void;
   setIsSubmitting: (isSubmitting: boolean) => void;
+  handleSetIsSearchingFlights: (isSearching: boolean) => void;
   handleContinueBooking: (newSection: {
     outboundFlights?: boolean;
     returnFlights?: boolean;
@@ -67,6 +67,10 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
         }
   );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const handleSetIsSearchingFlights = (isSearching: boolean) => {
+    setIsSearchingFlights(isSearching);
+  };
 
   const handleContinueBooking = (
     newSection: {
@@ -128,7 +132,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
         flightData,
         setFlightData,
         isSearchingFlights,
-        setIsSearchingFlights,
+        handleSetIsSearchingFlights,
         handleContinueBooking,
         setIsSubmitting,
         handleStartOver: handleStartOver as (

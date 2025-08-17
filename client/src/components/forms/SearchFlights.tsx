@@ -26,7 +26,7 @@ import { useState } from "react";
 
 const SearchFlights = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
-  const { setFlightData, setIsSearchingFlights, handleStartOver } =
+  const { setFlightData, handleSetIsSearchingFlights, handleStartOver } =
     useFlightContext();
   const [open, setOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
@@ -50,7 +50,7 @@ const SearchFlights = () => {
 
   const onSubmit = async (data: z.infer<typeof flightBookingSchema>) => {
     try {
-      setIsSearchingFlights(true);
+      handleSetIsSearchingFlights(true);
 
       const flights = await fetch(`${apiUrl}/flights`, {
         method: "POST",
@@ -87,7 +87,7 @@ const SearchFlights = () => {
       console.error("Error fetching flights:", error);
       alert("Failed to fetch flights. Please try again later.");
     } finally {
-      setIsSearchingFlights(false);
+      handleSetIsSearchingFlights(false);
     }
   };
 
