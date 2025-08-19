@@ -15,9 +15,10 @@ const AvailableFlights = () => {
     const availableFlightModal = document.getElementById("available-flights");
     if (
       (availableFlightModal && isSearchingFlights) ||
-      (availableFlightModal && flightData.outboundFlights.length > 0)
+      availableFlightModal ||
+      flightData.outboundFlights.length > 0
     ) {
-      availableFlightModal.scrollIntoView({
+      availableFlightModal?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
