@@ -1,8 +1,8 @@
-import { PrismaClient } from "./server/generated/prisma/index.js";
+import { PrismaClient } from "./generated/prisma/index.js";
 import {
   generateBookingReference,
   generateSeatNumbers,
-} from "./server/utils/ticketAndBookingGenerator.js";
+} from "./utils/ticketAndBookingGenerator.js";
 
 const prisma = new PrismaClient();
 
