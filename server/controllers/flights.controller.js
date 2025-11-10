@@ -82,15 +82,38 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     const bookingReference = generateBookingReference();
 
-    const { default: chromium } = await import("@sparticuz/chromium");
+    // Determine if we're running in a serverless environment
+    const isServerless =
+      process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL;
 
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
+    let browser;
 
-    /* STEP 1: Generate Child PDF */
+    if (isServerless) {
+      // Use @sparticuz/chromium for serverless environments
+      const { default: chromium } = await import("@sparticuz/chromium");
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+      });
+    } else {
+      // Use regular Puppeteer for local development
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--no-first-run",
+          "--no-zygote",
+          "--single-process",
+          "--disable-gpu",
+        ],
+      });
+    }
+
+    /* STEP 1: Generate Flight PDF */
     const cleanedPrice = totalPrice.replace(/,/g, "");
     const currentPrice = Math.floor(parseFloat(cleanedPrice));
 
