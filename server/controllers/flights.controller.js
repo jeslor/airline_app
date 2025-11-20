@@ -63,15 +63,17 @@ const getFlights = asyncWrapper(async (req, res) => {
 
 const bookFlight = asyncWrapper(async (req, res) => {
   if (req.method !== "POST") {
-    res
-      .json({
-        message: "Method not allowed",
-        data: "something went wrong",
-      })
-      .status(405);
+    return res.status(405).json({
+      message: "Method not allowed",
+      data: "something went wrong",
+    });
   }
   try {
     const bookingData = req.body;
+    if (!bookingData) {
+      return res.status(400).json({ message: "Booking data is required" });
+    }
+
     const {
       passenger,
       outboundFlight,
@@ -94,22 +96,46 @@ const bookFlight = asyncWrapper(async (req, res) => {
       !!process.env.LAMBDA_TASK_ROOT;
 
     function getChromiumPath() {
+      // Check for environment overrides first (useful on Render or custom hosts)
+      const envCandidates = [
+        process.env.PUPPETEER_EXECUTABLE_PATH,
+        process.env.CHROME_PATH,
+        process.env.CHROME_BIN,
+      ].filter(Boolean);
+      for (const p of envCandidates) {
+        try {
+          if (fs.existsSync(p)) return p;
+        } catch (e) {
+          // ignore
+        }
+      }
+
       const paths = [
         "/usr/bin/chromium",
         "/usr/bin/chromium-browser",
         "/usr/bin/google-chrome",
         "/usr/bin/google-chrome-stable",
       ];
-      return paths.find((p) => fs.existsSync(p));
+      return paths.find((p) => {
+        try {
+          return fs.existsSync(p);
+        } catch (e) {
+          return false;
+        }
+      });
     }
 
     const isProduction = process.env.NODE_ENV === "production";
     const chromiumPath = getChromiumPath();
 
     if (isProduction && !chromiumPath) {
-      throw new Error(
-        "Chromium executable not found. Make sure apt.txt installs chromium on Render."
+      console.error(
+        "Chromium executable not found in production. Looked for system paths and env overrides."
       );
+      return res.status(500).json({
+        message:
+          "Chromium executable not found on the host. On Render: ensure an apt.txt is present at the service root to install chromium, or set PUPPETEER_EXECUTABLE_PATH / CHROME_PATH env var to the chromium binary path.",
+      });
     }
 
     const browser = await playwright.chromium.launch({
@@ -152,13 +178,20 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     await ticketPage.close();
     await browser.close();
+    const emailSecure =
+      String(process.env.EMAIL_SECURE || "").toLowerCase() === "true" ||
+      process.env.EMAIL_SECURE === "1";
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: process.env.EMAIL_SECURE,
+      port: Number(process.env.EMAIL_PORT) || 587,
+      secure: emailSecure,
       auth: {
-        user: process.env.EMAIL_USER.toString(),
-        pass: process.env.EMAIL_PASS.toString(),
+        user: process.env.EMAIL_USER
+          ? String(process.env.EMAIL_USER)
+          : undefined,
+        pass: process.env.EMAIL_PASS
+          ? String(process.env.EMAIL_PASS)
+          : undefined,
       },
     });
 
