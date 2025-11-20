@@ -61,13 +61,14 @@ const getFlights = asyncWrapper(async (req, res) => {
 });
 
 const bookFlight = asyncWrapper(async (req, res) => {
-  // if (req.method !== "POST") {
-  //   res.json({
-  //     message: "Method not allowed",
-  //     status: 405,
-  //     data: "something went wrong",
-  //   });
-  // }
+  if (req.method !== "POST") {
+    res
+      .json({
+        message: "Method not allowed",
+        data: "something went wrong",
+      })
+      .status(405);
+  }
   try {
     const bookingData = req.body;
     const {
@@ -166,16 +167,17 @@ const bookFlight = asyncWrapper(async (req, res) => {
     });
 
     // 3. Send the email with the PDF attachment
-    await transporter.sendMail({
-      from: `"Quencer Airlines" <${process.env.EMAIL_USER}>`,
-      to: `${bookingData.passenger.email}`,
-      subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.title} ${passenger.firstName} ${passenger.lastName}`,
-      html: `<div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6;">
+    try {
+      await transporter.sendMail({
+        from: `"Quencer Airlines" <${process.env.EMAIL_USER}>`,
+        to: `${bookingData.passenger.email}`,
+        subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.title} ${passenger.firstName} ${passenger.lastName}`,
+        html: `<div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6;">
   <div style="margin: auto; background-color: #fff; border-radius: 8px; padding-top: 20px; padding-bottom: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
 
     <h2 style="color: #2c3e50;">Dear ${passenger.firstName} ${
-        passenger.lastName
-      },</h2>
+          passenger.lastName
+        },</h2>
 
     <p>Thank you for booking with <strong>Quencer Airlines</strong>! Your reservation has been successfully received, and we’re excited to have you on board.</p>
 
@@ -241,11 +243,11 @@ const bookFlight = asyncWrapper(async (req, res) => {
         </tr>
         <tr>
           <td>${outboundFlight.departureTime}, ${
-        outboundFlight.departureDate
-      }</td>
+          outboundFlight.departureDate
+        }</td>
           <td style="text-align: right;">${outboundFlight.arrivalTime}, ${
-        outboundFlight.arrivalDate
-      }</td>
+          outboundFlight.arrivalDate
+        }</td>
         </tr>
         <tr>
           <td>${generateRandomTerminal()}</td>
@@ -314,8 +316,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
         <tr>
           <td>${returnFlight.departureTime}, ${returnFlight.departureDate}</td>
           <td style="text-align: right;">${returnFlight.arrivalTime}, ${
-        returnFlight.arrivalDate
-      }</td>
+          returnFlight.arrivalDate
+        }</td>
         </tr>
         <tr>
           <td>${generateRandomTerminal()}</td>
@@ -357,8 +359,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
     <tr>
       <td style="padding: 8px 0;"><strong>Name:</strong></td>
       <td style="padding: 8px 0;">${passenger.firstName} ${
-        passenger.lastName
-      }</td>
+          passenger.lastName
+        }</td>
     </tr>
     <tr>
       <td style="padding: 8px 0;"><strong>Email:</strong></td>
@@ -411,14 +413,17 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
 
       `,
-      attachments: [
-        {
-          filename: `ticket-${bookingReference}.pdf`,
-          content: ticketPdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
-    });
+        attachments: [
+          {
+            filename: `ticket-${bookingReference}.pdf`,
+            content: ticketPdfBuffer,
+            contentType: "application/pdf",
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("Error sending email with ticket:", error);
+    }
 
     res.json({
       message: "Email with Ticket sent successfully!",
