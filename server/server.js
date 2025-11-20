@@ -14,15 +14,50 @@ import asyncWrapper from "./utils/asyncWrapper.js";
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+// Configure CORS explicitly so preflight (OPTIONS) responses include the
+// necessary Access-Control-* headers. Use ALLOWED_ORIGINS env var (comma-separated)
+// to specify allowed origins in production (e.g., your Vercel frontend).
+function parseOrigins(value) {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((u) => {
+      try {
+        return new URL(u).origin;
+      } catch (_) {
+        return u;
+      }
+    });
+}
+
+const envAllowed = parseOrigins(
+  process.env.ALLOWED_ORIGINS || process.env.VITE_API_URL || ""
+);
+const defaultLocal = ["http://localhost:5173", "http://127.0.0.1:5173"];
+const allowedOrigins = Array.from(new Set([...envAllowed, ...defaultLocal]));
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like server-to-server or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"), false);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    optionsSuccessStatus: 204,
+  })
+);
+
+// Ensure preflight requests are handled for all routes
+app.options("*", cors());
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*"); // your domain or specific origins
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
