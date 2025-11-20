@@ -5,6 +5,7 @@ import express from "express";
 import bodyParser from "body-parser";
 
 import cors from "cors";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -73,6 +74,41 @@ app.get(
       console.error("Error in / route:", error);
       res.status(500).json({ message: "Internal server error" });
     }
+  })
+);
+
+// Health endpoint for debugging deployment issues (CORS, chromium path)
+app.get(
+  "/health",
+  asyncWrapper(async (req, res) => {
+    const env = process.env.NODE_ENV || "development";
+    // detect possible chromium paths
+    const candidates = [
+      process.env.PUPPETEER_EXECUTABLE_PATH,
+      process.env.CHROME_PATH,
+      "/usr/bin/chromium",
+      "/usr/bin/chromium-browser",
+      "/usr/bin/google-chrome",
+      "/usr/bin/google-chrome-stable",
+    ].filter(Boolean);
+
+    const detected = [];
+    for (const c of candidates) {
+      try {
+        if (fs.existsSync(c)) detected.push(c);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    res.json({
+      status: "ok",
+      env,
+      allowedOrigins,
+      originHeader: req.headers.origin || null,
+      chromiumDetected: detected,
+      now: new Date().toISOString(),
+    });
   })
 );
 

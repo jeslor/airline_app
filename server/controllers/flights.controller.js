@@ -148,8 +148,6 @@ const bookFlight = asyncWrapper(async (req, res) => {
     const cleanedPrice = totalPrice.replace(/,/g, "");
     const currentPrice = Math.floor(parseFloat(cleanedPrice));
 
-    const ticketPage = await browser.newPage();
-
     const ticketHtml = TicketDetailsTemplate(
       passenger,
       outboundFlight,
@@ -160,24 +158,42 @@ const bookFlight = asyncWrapper(async (req, res) => {
       bookingTime
     );
 
-    // 1. Load the HTML (Playwright does NOT support waitUntil here)
-    await ticketPage.setContent(ticketHtml, { timeout: 120000 });
+    // Use a dedicated context to isolate resources and allow clean shutdown.
+    let context;
+    let ticketPage;
+    let ticketPdfBuffer;
+    try {
+      context = await browser.newContext({
+        viewport: { width: 1200, height: 800 },
+      });
+      ticketPage = await context.newPage();
 
-    // 2. Wait until everything is stable (images, CSS, layouts)
-    await ticketPage.waitForLoadState("networkidle");
+      // Set content and wait for network and font readiness.
+      await ticketPage.setContent(ticketHtml, { timeout: 120000 });
+      await ticketPage.waitForLoadState("networkidle");
+      // Wait for webfonts to be ready if available
+      try {
+        await ticketPage.evaluate(() => document.fonts && document.fonts.ready);
+      } catch (_) {
+        // ignore if not supported
+      }
 
-    // 3. Small delay to let fonts + Tailwind finish styling (Playwright best practice)
-    await ticketPage.waitForTimeout(200);
-
-    // 4. Generate PDF
-    const ticketPdfBuffer = await ticketPage.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
-    });
-
-    await ticketPage.close();
-    await browser.close();
+      ticketPdfBuffer = await ticketPage.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+      });
+    } finally {
+      try {
+        if (ticketPage) await ticketPage.close();
+      } catch (e) {}
+      try {
+        if (context) await context.close();
+      } catch (e) {}
+      try {
+        await browser.close();
+      } catch (e) {}
+    }
     const emailSecure =
       String(process.env.EMAIL_SECURE || "").toLowerCase() === "true" ||
       process.env.EMAIL_SECURE === "1";
