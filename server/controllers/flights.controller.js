@@ -2,6 +2,7 @@ import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
 import puppeteer from "puppeteer";
+import { chromium } from "playwright";
 import nodemailer from "nodemailer";
 import {
   generateBookingReference,
@@ -98,10 +99,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
       // Use sparticuz in serverless environments
       try {
         const { default: chromium } = await import("@sparticuz/chromium");
-        browser = await puppeteer.launch({
-          args: chromium.args,
-          executablePath: await chromium.executablePath(),
-          headless: chromium.headless,
+        browser = await chromium.launch({
+          args: ["--no-sandbox"],
         });
       } catch (err) {
         console.error("Failed to launch sparticuz chromium:", err);
@@ -111,18 +110,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
       // Local development: use Puppeteer's bundled browser or system Chrome
       // Avoid specifying an executablePath so Puppeteer uses its bundled
       // "Chrome for Testing" which is known to work on the developer machine.
-      browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-accelerated-2d-canvas",
-          "--no-first-run",
-          "--no-zygote",
-          "--single-process",
-          "--disable-gpu",
-        ],
+      browser = await chromium.launch({
+        args: ["--no-sandbox"],
       });
     }
 
@@ -131,6 +120,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
     const currentPrice = Math.floor(parseFloat(cleanedPrice));
 
     const ticketPage = await browser.newPage();
+
     const ticketHtml = TicketDetailsTemplate(
       passenger,
       outboundFlight,
@@ -141,21 +131,24 @@ const bookFlight = asyncWrapper(async (req, res) => {
       bookingTime
     );
 
-    await ticketPage.setContent(ticketHtml, {
-      waitUntil: "networkidle2",
-      timeout: 120000,
-    });
+    // 1. Load the HTML (Playwright does NOT support waitUntil here)
+    await ticketPage.setContent(ticketHtml, { timeout: 120000 });
 
+    // 2. Wait until everything is stable (images, CSS, layouts)
+    await ticketPage.waitForLoadState("networkidle");
+
+    // 3. Small delay to let fonts + Tailwind finish styling (Playwright best practice)
+    await ticketPage.waitForTimeout(200);
+
+    // 4. Generate PDF
     const ticketPdfBuffer = await ticketPage.pdf({
       format: "A4",
       printBackground: true,
       margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
     });
 
-    await ticketPage.close(); // Close this page after use
-
+    await ticketPage.close();
     await browser.close();
-
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: Number(process.env.EMAIL_PORT),
