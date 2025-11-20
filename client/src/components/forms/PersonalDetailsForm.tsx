@@ -28,7 +28,10 @@ import { useState } from "react";
 import SearchingForFlights from "../Loading/SearchingForFlights";
 
 export function PersonalDetailsForm() {
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl =
+    process.env.NODE_ENV === "development"
+      ? import.meta.env.VITE_API_URL_LOCAL
+      : import.meta.env.VITE_API_URL;
   const {
     setBookingData,
     bookingData,

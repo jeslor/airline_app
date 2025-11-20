@@ -25,7 +25,10 @@ import { useFlightContext } from "../providers/FlightProvider";
 import { useState } from "react";
 
 const SearchFlights = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl =
+    process.env.NODE_ENV === "development"
+      ? import.meta.env.VITE_API_URL_LOCAL
+      : import.meta.env.VITE_API_URL;
   const { setFlightData, handleSetIsSearchingFlights, handleStartOver } =
     useFlightContext();
   const [open, setOpen] = useState(false);
@@ -55,6 +58,7 @@ const SearchFlights = () => {
       const flights = await fetch(`${apiUrl}/flights`, {
         method: "POST",
         headers: {
+          "Access-Control-Allow-Origin": "*",
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
