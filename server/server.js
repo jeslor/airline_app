@@ -17,6 +17,12 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // or your domain
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

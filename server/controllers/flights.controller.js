@@ -82,22 +82,34 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     const bookingReference = generateBookingReference();
 
-    // Determine if we're running in a serverless environment
+    // Choose the appropriate Chromium/Chrome for the environment.
+    // On serverless platforms use @sparticuz/chromium; locally use the
+    // regular Puppeteer binary or the system Chrome. This avoids ENOEXEC
+    // caused by trying to run a serverless-optimized binary locally.
     const isServerless =
-      process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL;
+      !!process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      !!process.env.VERCEL ||
+      !!process.env.LAMBDA_TASK_ROOT;
 
     let browser;
 
     if (isServerless) {
-      // Use @sparticuz/chromium for serverless environments
-      const { default: chromium } = await import("@sparticuz/chromium");
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-      });
+      // Use sparticuz in serverless environments
+      try {
+        const { default: chromium } = await import("@sparticuz/chromium");
+        browser = await puppeteer.launch({
+          args: chromium.args,
+          executablePath: await chromium.executablePath(),
+          headless: chromium.headless,
+        });
+      } catch (err) {
+        console.error("Failed to launch sparticuz chromium:", err);
+        throw err;
+      }
     } else {
-      // Use regular Puppeteer for local development
+      // Local development: use Puppeteer's bundled browser or system Chrome
+      // Avoid specifying an executablePath so Puppeteer uses its bundled
+      // "Chrome for Testing" which is known to work on the developer machine.
       browser = await puppeteer.launch({
         headless: true,
         args: [
