@@ -1,7 +1,7 @@
 import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
-import puppeteer from "puppeteer";
+import fs from "fs";
 import playwright from "playwright";
 import nodemailer from "nodemailer";
 import {
@@ -93,11 +93,28 @@ const bookFlight = asyncWrapper(async (req, res) => {
       !!process.env.VERCEL ||
       !!process.env.LAMBDA_TASK_ROOT;
 
-    const isProduction = process.env.NODE_ENV === "production"; // or use NODE_ENV === "production"
+    function getChromiumPath() {
+      const paths = [
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+      ];
+      return paths.find((p) => fs.existsSync(p));
+    }
+
+    const isProduction = process.env.NODE_ENV === "production";
+    const chromiumPath = getChromiumPath();
+
+    if (isProduction && !chromiumPath) {
+      throw new Error(
+        "Chromium executable not found. Make sure apt.txt installs chromium on Render."
+      );
+    }
 
     const browser = await playwright.chromium.launch({
       headless: true,
-      executablePath: isProduction ? "/usr/bin/chromium" : undefined,
+      executablePath: isProduction ? chromiumPath : undefined,
       args: isProduction ? ["--no-sandbox", "--disable-setuid-sandbox"] : [],
     });
 
