@@ -60,6 +60,7 @@ export function PersonalDetailsForm() {
       const response = await fetch(`${apiUrl}/book`, {
         method: "POST",
         headers: {
+          "Access-Control-Allow-Origin": "*",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
