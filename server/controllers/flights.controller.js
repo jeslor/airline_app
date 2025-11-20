@@ -2,7 +2,7 @@ import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
 import puppeteer from "puppeteer";
-import { chromium } from "playwright";
+import playwright from "playwright";
 import nodemailer from "nodemailer";
 import {
   generateBookingReference,
@@ -93,27 +93,13 @@ const bookFlight = asyncWrapper(async (req, res) => {
       !!process.env.VERCEL ||
       !!process.env.LAMBDA_TASK_ROOT;
 
-    let browser;
+    const isProduction = process.env.NODE_ENV === "production"; // or use NODE_ENV === "production"
 
-    if (isServerless) {
-      // Use sparticuz in serverless environments
-      try {
-        const { default: chromium } = await import("@sparticuz/chromium");
-        browser = await chromium.launch({
-          args: ["--no-sandbox"],
-        });
-      } catch (err) {
-        console.error("Failed to launch sparticuz chromium:", err);
-        throw err;
-      }
-    } else {
-      // Local development: use Puppeteer's bundled browser or system Chrome
-      // Avoid specifying an executablePath so Puppeteer uses its bundled
-      // "Chrome for Testing" which is known to work on the developer machine.
-      browser = await chromium.launch({
-        args: ["--no-sandbox"],
-      });
-    }
+    const browser = await playwright.chromium.launch({
+      headless: true,
+      executablePath: isProduction ? "/usr/bin/chromium-browser" : undefined,
+      args: isProduction ? ["--no-sandbox", "--disable-setuid-sandbox"] : [],
+    });
 
     /* STEP 1: Generate Flight PDF */
     const cleanedPrice = totalPrice.replace(/,/g, "");
