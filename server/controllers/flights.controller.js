@@ -97,7 +97,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     const browser = await playwright.chromium.launch({
       headless: true,
-      executablePath: isProduction ? "/usr/bin/chromium-browser" : undefined,
+      executablePath: isProduction ? "/usr/bin/chromium" : undefined,
       args: isProduction ? ["--no-sandbox", "--disable-setuid-sandbox"] : [],
     });
 
