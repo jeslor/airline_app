@@ -1,8 +1,7 @@
 import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
-import fs from "fs";
-import playwright from "playwright";
+import puppeteer from "puppeteer";
 import nodemailer from "nodemailer";
 import {
   generateBookingReference,
@@ -62,18 +61,15 @@ const getFlights = asyncWrapper(async (req, res) => {
 });
 
 const bookFlight = asyncWrapper(async (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      message: "Method not allowed",
-      data: "something went wrong",
-    });
-  }
+  // if (req.method !== "POST") {
+  //   res.json({
+  //     message: "Method not allowed",
+  //     status: 405,
+  //     data: "something went wrong",
+  //   });
+  // }
   try {
     const bookingData = req.body;
-    if (!bookingData) {
-      return res.status(400).json({ message: "Booking data is required" });
-    }
-
     const {
       passenger,
       outboundFlight,
@@ -86,68 +82,19 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     const bookingReference = generateBookingReference();
 
-    // Choose the appropriate Chromium/Chrome for the environment.
-    // On serverless platforms use @sparticuz/chromium; locally use the
-    // regular Puppeteer binary or the system Chrome. This avoids ENOEXEC
-    // caused by trying to run a serverless-optimized binary locally.
-    const isServerless =
-      !!process.env.AWS_LAMBDA_FUNCTION_NAME ||
-      !!process.env.VERCEL ||
-      !!process.env.LAMBDA_TASK_ROOT;
+    const { default: chromium } = await import("@sparticuz/chromium");
 
-    function getChromiumPath() {
-      // Check for environment overrides first (useful on Render or custom hosts)
-      const envCandidates = [
-        process.env.PUPPETEER_EXECUTABLE_PATH,
-        process.env.CHROME_PATH,
-        process.env.CHROME_BIN,
-      ].filter(Boolean);
-      for (const p of envCandidates) {
-        try {
-          if (fs.existsSync(p)) return p;
-        } catch (e) {
-          // ignore
-        }
-      }
-
-      const paths = [
-        "/usr/bin/chromium",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/google-chrome",
-        "/usr/bin/google-chrome-stable",
-      ];
-      return paths.find((p) => {
-        try {
-          return fs.existsSync(p);
-        } catch (e) {
-          return false;
-        }
-      });
-    }
-
-    const isProduction = process.env.NODE_ENV === "production";
-    const chromiumPath = getChromiumPath();
-
-    if (isProduction && !chromiumPath) {
-      console.error(
-        "Chromium executable not found in production. Looked for system paths and env overrides."
-      );
-      return res.status(500).json({
-        message:
-          "Chromium executable not found on the host. On Render: ensure an apt.txt is present at the service root to install chromium, or set PUPPETEER_EXECUTABLE_PATH / CHROME_PATH env var to the chromium binary path.",
-      });
-    }
-
-    const browser = await playwright.chromium.launch({
-      headless: true,
-      executablePath: isProduction ? chromiumPath : undefined,
-      args: isProduction ? ["--no-sandbox", "--disable-setuid-sandbox"] : [],
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
     /* STEP 1: Generate Flight PDF */
     const cleanedPrice = totalPrice.replace(/,/g, "");
     const currentPrice = Math.floor(parseFloat(cleanedPrice));
 
+    const ticketPage = await browser.newPage();
     const ticketHtml = TicketDetailsTemplate(
       passenger,
       outboundFlight,
@@ -158,71 +105,42 @@ const bookFlight = asyncWrapper(async (req, res) => {
       bookingTime
     );
 
-    // Use a dedicated context to isolate resources and allow clean shutdown.
-    let context;
-    let ticketPage;
-    let ticketPdfBuffer;
-    try {
-      context = await browser.newContext({
-        viewport: { width: 1200, height: 800 },
-      });
-      ticketPage = await context.newPage();
+    await ticketPage.setContent(ticketHtml, {
+      waitUntil: "networkidle2",
+      timeout: 120000,
+    });
 
-      // Set content and wait for network and font readiness.
-      await ticketPage.setContent(ticketHtml, { timeout: 120000 });
-      await ticketPage.waitForLoadState("networkidle");
-      // Wait for webfonts to be ready if available
-      try {
-        await ticketPage.evaluate(() => document.fonts && document.fonts.ready);
-      } catch (_) {
-        // ignore if not supported
-      }
+    const ticketPdfBuffer = await ticketPage.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+    });
 
-      ticketPdfBuffer = await ticketPage.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
-      });
-    } finally {
-      try {
-        if (ticketPage) await ticketPage.close();
-      } catch (e) {}
-      try {
-        if (context) await context.close();
-      } catch (e) {}
-      try {
-        await browser.close();
-      } catch (e) {}
-    }
-    const emailSecure =
-      String(process.env.EMAIL_SECURE || "").toLowerCase() === "true" ||
-      process.env.EMAIL_SECURE === "1";
+    await ticketPage.close(); // Close this page after use
+
+    await browser.close();
+
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT) || 587,
-      secure: emailSecure,
+      port: Number(process.env.EMAIL_PORT),
+      secure: process.env.EMAIL_SECURE,
       auth: {
-        user: process.env.EMAIL_USER
-          ? String(process.env.EMAIL_USER)
-          : undefined,
-        pass: process.env.EMAIL_PASS
-          ? String(process.env.EMAIL_PASS)
-          : undefined,
+        user: process.env.EMAIL_USER.toString(),
+        pass: process.env.EMAIL_PASS.toString(),
       },
     });
 
     // 3. Send the email with the PDF attachment
-    try {
-      await transporter.sendMail({
-        from: `"Quencer Airlines" <${process.env.EMAIL_USER}>`,
-        to: `${bookingData.passenger.email}`,
-        subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.title} ${passenger.firstName} ${passenger.lastName}`,
-        html: `<div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6;">
+    await transporter.sendMail({
+      from: `"Quencer Airlines" <${process.env.EMAIL_USER}>`,
+      to: `${bookingData.passenger.email}`,
+      subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.title} ${passenger.firstName} ${passenger.lastName}`,
+      html: `<div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6;">
   <div style="margin: auto; background-color: #fff; border-radius: 8px; padding-top: 20px; padding-bottom: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
 
     <h2 style="color: #2c3e50;">Dear ${passenger.firstName} ${
-          passenger.lastName
-        },</h2>
+        passenger.lastName
+      },</h2>
 
     <p>Thank you for booking with <strong>Quencer Airlines</strong>! Your reservation has been successfully received, and we’re excited to have you on board.</p>
 
@@ -288,11 +206,11 @@ const bookFlight = asyncWrapper(async (req, res) => {
         </tr>
         <tr>
           <td>${outboundFlight.departureTime}, ${
-          outboundFlight.departureDate
-        }</td>
+        outboundFlight.departureDate
+      }</td>
           <td style="text-align: right;">${outboundFlight.arrivalTime}, ${
-          outboundFlight.arrivalDate
-        }</td>
+        outboundFlight.arrivalDate
+      }</td>
         </tr>
         <tr>
           <td>${generateRandomTerminal()}</td>
@@ -361,8 +279,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
         <tr>
           <td>${returnFlight.departureTime}, ${returnFlight.departureDate}</td>
           <td style="text-align: right;">${returnFlight.arrivalTime}, ${
-          returnFlight.arrivalDate
-        }</td>
+        returnFlight.arrivalDate
+      }</td>
         </tr>
         <tr>
           <td>${generateRandomTerminal()}</td>
@@ -404,8 +322,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
     <tr>
       <td style="padding: 8px 0;"><strong>Name:</strong></td>
       <td style="padding: 8px 0;">${passenger.firstName} ${
-          passenger.lastName
-        }</td>
+        passenger.lastName
+      }</td>
     </tr>
     <tr>
       <td style="padding: 8px 0;"><strong>Email:</strong></td>
@@ -458,17 +376,14 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
 
       `,
-        attachments: [
-          {
-            filename: `ticket-${bookingReference}.pdf`,
-            content: ticketPdfBuffer,
-            contentType: "application/pdf",
-          },
-        ],
-      });
-    } catch (error) {
-      console.error("Error sending email with ticket:", error);
-    }
+      attachments: [
+        {
+          filename: `ticket-${bookingReference}.pdf`,
+          content: ticketPdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
 
     res.json({
       message: "Email with Ticket sent successfully!",
