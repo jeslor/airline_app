@@ -1,7 +1,7 @@
 import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
-import { chromium } from "playwright";
+import puppeteer from "puppeteer";
 import nodemailer from "nodemailer";
 import {
   generateBookingReference,
@@ -418,25 +418,25 @@ const createPDF = async (
   currentPrice,
   bookingReference,
   bookingDate,
-  bookingTime,
-  res
+  bookingTime
 ) => {
+  let browser;
+  let ticketPage;
+
   try {
-    //always use headless true in production
-    const options = {
+    // Launch Puppeteer browser
+    browser = await puppeteer.launch({
       headless: true,
-      channel: "chrome", // This forces it to use your local Google Chrome installation
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    };
-    const browser = await chromium.launch(
-      process.env.NODE_ENV === "development" ? options : {}
-    );
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+    });
 
-    let ticketPdfBuffer;
+    // Create a new page
+    ticketPage = await browser.newPage();
 
-    /* STEP 1: Generate Flight PDF */
+    // Set viewport for PDF printing
+    await ticketPage.setViewport({ width: 1200, height: 800 });
 
-    const ticketPage = await browser.newPage();
+    // Generate HTML content
     const ticketHtml = TicketDetailsTemplate(
       passenger,
       outboundFlight,
@@ -447,12 +447,21 @@ const createPDF = async (
       bookingTime
     );
 
+    // Set HTML content and wait for network to be idle
     await ticketPage.setContent(ticketHtml, {
-      waitUntil: "load",
-      timeout: 120000,
+      waitUntil: "networkidle0",
+      timeout: 120000, // 2 minutes
     });
 
-    ticketPdfBuffer = await ticketPage.pdf({
+    // Wait for fonts to load
+    try {
+      await ticketPage.evaluate(() => document.fonts && document.fonts.ready);
+    } catch (_) {
+      // ignore if fonts API not available
+    }
+
+    // Generate PDF
+    const ticketPdfBuffer = await ticketPage.pdf({
       format: "A4",
       printBackground: true,
       margin: {
@@ -463,13 +472,18 @@ const createPDF = async (
       },
     });
 
-    await ticketPage.close(); // Close this page after use
-
-    await browser.close();
     return ticketPdfBuffer;
   } catch (error) {
     console.error("Error generating flight ticket PDF:", error);
     throw new Error("Error generating flight ticket PDF: " + error.message);
+  } finally {
+    // Cleanup
+    try {
+      if (ticketPage) await ticketPage.close();
+    } catch (e) {}
+    try {
+      if (browser) await browser.close();
+    } catch (e) {}
   }
 };
 
@@ -477,20 +491,23 @@ const createEmailTransporter = async () => {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      secure: process.env.NODE_ENV === "development" ? true : false,
+      port: Number(process.env.EMAIL_PORT) || 587, // default to 587 if not set
+      secure: Number(process.env.EMAIL_PORT) === 465, // true for 465, false for others
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      // connectionTimeout: 10000, // 10 seconds
-      // greetingTimeout: 10000, // 10 seconds
-      // tls: {
-      //   rejectUnauthorized: false, // Helps avoid certificate errors on shared cloud IPs
-      // },
+      connectionTimeout: 30000, // 30 seconds
+      greetingTimeout: 30000, // 30 seconds
+      tls: {
+        rejectUnauthorized: false, // avoid cert issues in cloud environments
+      },
     });
 
-    await transporter.verify(); // if this fails, THROW to the caller
+    // Optional: verify connection before using
+    await transporter.verify();
+
+    console.log("✅ Email transporter ready");
     return transporter;
   } catch (error) {
     console.error("❌ Error setting up email transporter:", error);
