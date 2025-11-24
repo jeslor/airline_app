@@ -1,7 +1,7 @@
 import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
-import puppeteer from "puppeteer";
+import { chromium } from "playwright";
 import nodemailer from "nodemailer";
 import {
   generateBookingReference,
@@ -82,13 +82,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     const bookingReference = generateBookingReference();
 
-    const { default: chromium } = await import("@sparticuz/chromium");
-
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
+    const browser = await chromium.launch();
 
     /* STEP 1: Generate Flight PDF */
     const cleanedPrice = totalPrice.replace(/,/g, "");
@@ -106,7 +100,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
     );
 
     await ticketPage.setContent(ticketHtml, {
-      waitUntil: "networkidle2",
+      waitUntil: "load",
       timeout: 120000,
     });
 
