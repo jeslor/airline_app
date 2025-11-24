@@ -69,6 +69,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
   //   });
   // }
   try {
+    let transporter;
+    let ticketPdfBuffer;
     const bookingData = req.body;
     const {
       passenger,
@@ -105,7 +107,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
         timeout: 120000,
       });
 
-      const ticketPdfBuffer = await ticketPage.pdf({
+      ticketPdfBuffer = await ticketPage.pdf({
         format: "A4",
         printBackground: true,
         margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
@@ -123,7 +125,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
     }
 
     try {
-      const transporter = nodemailer.createTransport({
+      transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST,
         port: Number(process.env.EMAIL_PORT),
         secure: process.env.EMAIL_SECURE,
