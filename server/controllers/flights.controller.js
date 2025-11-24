@@ -422,6 +422,7 @@ const createPDF = async (
   res
 ) => {
   try {
+    //always use headless true in production
     const options = {
       headless: true,
       channel: "chrome", // This forces it to use your local Google Chrome installation
