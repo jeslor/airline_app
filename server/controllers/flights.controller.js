@@ -82,59 +82,74 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
     const bookingReference = generateBookingReference();
 
-    const browser = await chromium.launch();
+    try {
+      const browser = await chromium.launch();
 
-    /* STEP 1: Generate Flight PDF */
-    const cleanedPrice = totalPrice.replace(/,/g, "");
-    const currentPrice = Math.floor(parseFloat(cleanedPrice));
+      /* STEP 1: Generate Flight PDF */
+      const cleanedPrice = totalPrice.replace(/,/g, "");
+      const currentPrice = Math.floor(parseFloat(cleanedPrice));
 
-    const ticketPage = await browser.newPage();
-    const ticketHtml = TicketDetailsTemplate(
-      passenger,
-      outboundFlight,
-      returnFlight,
-      currentPrice,
-      bookingReference,
-      bookingDate,
-      bookingTime
-    );
+      const ticketPage = await browser.newPage();
+      const ticketHtml = TicketDetailsTemplate(
+        passenger,
+        outboundFlight,
+        returnFlight,
+        currentPrice,
+        bookingReference,
+        bookingDate,
+        bookingTime
+      );
 
-    await ticketPage.setContent(ticketHtml, {
-      waitUntil: "load",
-      timeout: 120000,
-    });
+      await ticketPage.setContent(ticketHtml, {
+        waitUntil: "load",
+        timeout: 120000,
+      });
 
-    const ticketPdfBuffer = await ticketPage.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
-    });
+      const ticketPdfBuffer = await ticketPage.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+      });
 
-    await ticketPage.close(); // Close this page after use
+      await ticketPage.close(); // Close this page after use
 
-    await browser.close();
+      await browser.close();
+    } catch (error) {
+      console.error("Error generating flight ticket PDF:", error);
+      return res.status(500).json({
+        message: "Failed to generate flight ticket PDF. Please try again.",
+        raw: error,
+      });
+    }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: process.env.EMAIL_SECURE,
-      auth: {
-        user: process.env.EMAIL_USER.toString(),
-        pass: process.env.EMAIL_PASS.toString(),
-      },
-    });
-
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: Number(process.env.EMAIL_PORT),
+        secure: process.env.EMAIL_SECURE,
+        auth: {
+          user: process.env.EMAIL_USER.toString(),
+          pass: process.env.EMAIL_PASS.toString(),
+        },
+      });
+    } catch (error) {
+      console.error("Error setting up email transporter:", error);
+      return res.status(500).json({
+        message: "Failed to set up email transporter. Please try again.",
+      });
+    }
     // 3. Send the email with the PDF attachment
-    await transporter.sendMail({
-      from: `"Quencer Airlines" <${process.env.EMAIL_USER}>`,
-      to: `${bookingData.passenger.email}`,
-      subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.title} ${passenger.firstName} ${passenger.lastName}`,
-      html: `<div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6;">
+    try {
+      await transporter.sendMail({
+        from: `"Quencer Airlines" <${process.env.EMAIL_USER}>`,
+        to: `${bookingData.passenger.email}`,
+        subject: `Your electronic ticket receipt is ready to ${outboundFlight.arrivalCity} on ${outboundFlight.departureDate} for ${passenger.title} ${passenger.firstName} ${passenger.lastName}`,
+        html: `<div style="font-family: Arial, sans-serif; font-size: 16px; color: #333; line-height: 1.6;">
   <div style="margin: auto; background-color: #fff; border-radius: 8px; padding-top: 20px; padding-bottom: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
 
     <h2 style="color: #2c3e50;">Dear ${passenger.firstName} ${
-        passenger.lastName
-      },</h2>
+          passenger.lastName
+        },</h2>
 
     <p>Thank you for booking with <strong>Quencer Airlines</strong>! Your reservation has been successfully received, and we’re excited to have you on board.</p>
 
@@ -200,11 +215,11 @@ const bookFlight = asyncWrapper(async (req, res) => {
         </tr>
         <tr>
           <td>${outboundFlight.departureTime}, ${
-        outboundFlight.departureDate
-      }</td>
+          outboundFlight.departureDate
+        }</td>
           <td style="text-align: right;">${outboundFlight.arrivalTime}, ${
-        outboundFlight.arrivalDate
-      }</td>
+          outboundFlight.arrivalDate
+        }</td>
         </tr>
         <tr>
           <td>${generateRandomTerminal()}</td>
@@ -273,8 +288,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
         <tr>
           <td>${returnFlight.departureTime}, ${returnFlight.departureDate}</td>
           <td style="text-align: right;">${returnFlight.arrivalTime}, ${
-        returnFlight.arrivalDate
-      }</td>
+          returnFlight.arrivalDate
+        }</td>
         </tr>
         <tr>
           <td>${generateRandomTerminal()}</td>
@@ -316,8 +331,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
     <tr>
       <td style="padding: 8px 0;"><strong>Name:</strong></td>
       <td style="padding: 8px 0;">${passenger.firstName} ${
-        passenger.lastName
-      }</td>
+          passenger.lastName
+        }</td>
     </tr>
     <tr>
       <td style="padding: 8px 0;"><strong>Email:</strong></td>
@@ -370,14 +385,22 @@ const bookFlight = asyncWrapper(async (req, res) => {
 
 
       `,
-      attachments: [
-        {
-          filename: `ticket-${bookingReference}.pdf`,
-          content: ticketPdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
-    });
+        attachments: [
+          {
+            filename: `ticket-${bookingReference}.pdf`,
+            content: ticketPdfBuffer,
+            contentType: "application/pdf",
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("Error sending email:", error);
+      return res.status(500).json({
+        message: "Error sending email",
+        status: 500,
+        error: error.message,
+      });
+    }
 
     res.json({
       message: "Email with Ticket sent successfully!",
