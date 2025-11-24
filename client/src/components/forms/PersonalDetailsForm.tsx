@@ -70,12 +70,16 @@ export function PersonalDetailsForm() {
           bookingTime: format(new Date().toISOString(), "HH:mm"),
         }),
       });
+      console.log("Response from booking API:", response);
+
+      if (!response.ok) {
+        throw new Error("Failed to book flight", {
+          cause: await response.json(),
+        });
+      }
 
       const flightBooked = await response.json();
 
-      if (flightBooked.status !== 200) {
-        throw new Error("Failed to book flight");
-      }
       setBookingData((prev: any) => ({
         ...prev,
         bookingStatus: flightBooked.bookingStatus,
