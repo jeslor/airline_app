@@ -69,7 +69,6 @@ const bookFlight = asyncWrapper(async (req, res) => {
   //   });
   // }
   try {
-    let transporter;
     const bookingData = req.body;
     const {
       passenger,
@@ -85,6 +84,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
     const cleanedPrice = totalPrice.replace(/,/g, "");
     const currentPrice = Math.floor(parseFloat(cleanedPrice));
 
+    //1. build the ticket pdf file
     const ticketPdfBuffer = await createPDF(
       passenger,
       outboundFlight,
@@ -95,22 +95,19 @@ const bookFlight = asyncWrapper(async (req, res) => {
       bookingTime
     );
 
+    // 2. Create email transporter
+    let transporter;
     try {
-      transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: Number(process.env.EMAIL_PORT),
-        secure: process.env.EMAIL_SECURE,
-        auth: {
-          user: process.env.EMAIL_USER.toString(),
-          pass: process.env.EMAIL_PASS.toString(),
-        },
-      });
+      transporter = await createEmailTransporter();
     } catch (error) {
-      console.error("Error setting up email transporter:", error);
+      console.error("Error creating email transporter:", error);
       return res.status(500).json({
-        message: "Failed to set up email transporter. Please try again.",
+        message: "Error setting up email service",
+        status: 500,
+        error: error.message,
       });
     }
+
     // 3. Send the email with the PDF attachment
     try {
       await transporter.sendMail({
@@ -403,6 +400,7 @@ const bookFlight = asyncWrapper(async (req, res) => {
   }
 });
 
+//build the pdf with playwright from the ticket template using the data provided
 const createPDF = async (
   passenger,
   outboundFlight,
@@ -451,6 +449,29 @@ const createPDF = async (
       message: "Failed to generate flight ticket PDF. Please try again.",
       raw: error,
     });
+  }
+};
+
+const createEmailTransporter = async () => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: process.env.EMAIL_SECURE === "true", // FIX
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false, // helps on Render
+      },
+    });
+
+    await transporter.verify(); // if this fails, THROW to the caller
+    return transporter;
+  } catch (error) {
+    console.error("❌ Error setting up email transporter:", error);
+    throw new Error("EMAIL_TRANSPORTER_FAILED");
   }
 };
 
