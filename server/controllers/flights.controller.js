@@ -456,14 +456,16 @@ const createEmailTransporter = async () => {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: process.env.EMAIL_SECURE === "true", // FIX
+      port: process.env.NODE_ENV === "development" ? 465 : 587,
+      secure: process.env.NODE_ENV === "development" ? true : false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000, // 10 seconds
       tls: {
-        rejectUnauthorized: false, // helps on Render
+        rejectUnauthorized: false, // Helps avoid certificate errors on shared cloud IPs
       },
     });
 
