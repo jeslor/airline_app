@@ -8,10 +8,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "playwright install chromium"
+    "postinstall": "npx playwright install --with-deps"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@playwright/browser-chromium": "^1.56.1",
     "@prisma/client": "^6.12.0",
     "@sparticuz/chromium": "^138.0.2",
     "ai": "^4.3.19",

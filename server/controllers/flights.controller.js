@@ -85,18 +85,29 @@ const bookFlight = asyncWrapper(async (req, res) => {
     const currentPrice = Math.floor(parseFloat(cleanedPrice));
 
     //1. build the ticket pdf file
-    const ticketPdfBuffer = await createPDF(
-      passenger,
-      outboundFlight,
-      returnFlight,
-      currentPrice,
-      bookingReference,
-      bookingDate,
-      bookingTime
-    );
+    let ticketPdfBuffer;
+    try {
+      ticketPdfBuffer = await createPDF(
+        passenger,
+        outboundFlight,
+        returnFlight,
+        currentPrice,
+        bookingReference,
+        bookingDate,
+        bookingTime
+      );
+    } catch (error) {
+      console.error("Error creating PDF:", error);
+      return res.status(500).json({
+        message: "Error creating ticket PDF",
+        status: 500,
+        error: error.message,
+      });
+    }
 
-    // 2. Create email transporter
+    //2. create email transporter
     let transporter;
+
     try {
       transporter = await createEmailTransporter();
     } catch (error) {
@@ -400,7 +411,6 @@ const bookFlight = asyncWrapper(async (req, res) => {
   }
 });
 
-//build the pdf with playwright from the ticket template using the data provided
 const createPDF = async (
   passenger,
   outboundFlight,
@@ -408,12 +418,20 @@ const createPDF = async (
   currentPrice,
   bookingReference,
   bookingDate,
-  bookingTime
+  bookingTime,
+  res
 ) => {
-  let ticketPdfBuffer;
-
   try {
-    const browser = await chromium.launch();
+    const options = {
+      headless: true,
+      channel: "chrome", // This forces it to use your local Google Chrome installation
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    };
+    const browser = await chromium.launch(
+      process.env.NODE_ENV === "development" ? options : {}
+    );
+
+    let ticketPdfBuffer;
 
     /* STEP 1: Generate Flight PDF */
 
@@ -436,7 +454,12 @@ const createPDF = async (
     ticketPdfBuffer = await ticketPage.pdf({
       format: "A4",
       printBackground: true,
-      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+      margin: {
+        top: "10mm",
+        right: "10mm",
+        bottom: "10mm",
+        left: "10mm",
+      },
     });
 
     await ticketPage.close(); // Close this page after use
@@ -445,10 +468,7 @@ const createPDF = async (
     return ticketPdfBuffer;
   } catch (error) {
     console.error("Error generating flight ticket PDF:", error);
-    return res.status(500).json({
-      message: "Failed to generate flight ticket PDF. Please try again.",
-      raw: error,
-    });
+    throw new Error("Error generating flight ticket PDF: " + error.message);
   }
 };
 
