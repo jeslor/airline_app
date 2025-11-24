@@ -477,17 +477,17 @@ const createEmailTransporter = async () => {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: process.env.NODE_ENV === "development" ? 465 : 587,
+      port: process.env.EMAIL_PORT,
       secure: process.env.NODE_ENV === "development" ? true : false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000, // 10 seconds
-      tls: {
-        rejectUnauthorized: false, // Helps avoid certificate errors on shared cloud IPs
-      },
+      // connectionTimeout: 10000, // 10 seconds
+      // greetingTimeout: 10000, // 10 seconds
+      // tls: {
+      //   rejectUnauthorized: false, // Helps avoid certificate errors on shared cloud IPs
+      // },
     });
 
     await transporter.verify(); // if this fails, THROW to the caller
