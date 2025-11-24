@@ -8,7 +8,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "npx playwright install --with-deps chromium || true"
+    "postinstall": "playwright install chromium"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
