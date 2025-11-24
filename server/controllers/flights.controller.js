@@ -70,7 +70,6 @@ const bookFlight = asyncWrapper(async (req, res) => {
   // }
   try {
     let transporter;
-    let ticketPdfBuffer;
     const bookingData = req.body;
     const {
       passenger,
@@ -83,46 +82,18 @@ const bookFlight = asyncWrapper(async (req, res) => {
     } = bookingData;
 
     const bookingReference = generateBookingReference();
+    const cleanedPrice = totalPrice.replace(/,/g, "");
+    const currentPrice = Math.floor(parseFloat(cleanedPrice));
 
-    try {
-      const browser = await chromium.launch();
-
-      /* STEP 1: Generate Flight PDF */
-      const cleanedPrice = totalPrice.replace(/,/g, "");
-      const currentPrice = Math.floor(parseFloat(cleanedPrice));
-
-      const ticketPage = await browser.newPage();
-      const ticketHtml = TicketDetailsTemplate(
-        passenger,
-        outboundFlight,
-        returnFlight,
-        currentPrice,
-        bookingReference,
-        bookingDate,
-        bookingTime
-      );
-
-      await ticketPage.setContent(ticketHtml, {
-        waitUntil: "load",
-        timeout: 120000,
-      });
-
-      ticketPdfBuffer = await ticketPage.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
-      });
-
-      await ticketPage.close(); // Close this page after use
-
-      await browser.close();
-    } catch (error) {
-      console.error("Error generating flight ticket PDF:", error);
-      return res.status(500).json({
-        message: "Failed to generate flight ticket PDF. Please try again.",
-        raw: error,
-      });
-    }
+    const ticketPdfBuffer = await createPDF(
+      passenger,
+      outboundFlight,
+      returnFlight,
+      currentPrice,
+      bookingReference,
+      bookingDate,
+      bookingTime
+    );
 
     try {
       transporter = nodemailer.createTransport({
@@ -431,5 +402,56 @@ const bookFlight = asyncWrapper(async (req, res) => {
     res.status(500).json({ message: "Internal server error", data: error });
   }
 });
+
+const createPDF = async (
+  passenger,
+  outboundFlight,
+  returnFlight,
+  currentPrice,
+  bookingReference,
+  bookingDate,
+  bookingTime
+) => {
+  let ticketPdfBuffer;
+
+  try {
+    const browser = await chromium.launch();
+
+    /* STEP 1: Generate Flight PDF */
+
+    const ticketPage = await browser.newPage();
+    const ticketHtml = TicketDetailsTemplate(
+      passenger,
+      outboundFlight,
+      returnFlight,
+      currentPrice,
+      bookingReference,
+      bookingDate,
+      bookingTime
+    );
+
+    await ticketPage.setContent(ticketHtml, {
+      waitUntil: "load",
+      timeout: 120000,
+    });
+
+    ticketPdfBuffer = await ticketPage.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
+    });
+
+    await ticketPage.close(); // Close this page after use
+
+    await browser.close();
+    return ticketPdfBuffer;
+  } catch (error) {
+    console.error("Error generating flight ticket PDF:", error);
+    return res.status(500).json({
+      message: "Failed to generate flight ticket PDF. Please try again.",
+      raw: error,
+    });
+  }
+};
 
 export { getFlights, bookFlight };
