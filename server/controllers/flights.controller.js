@@ -471,7 +471,7 @@ const createEmailTransporter = async () => {
     return transporter;
   } catch (error) {
     console.error("❌ Error setting up email transporter:", error);
-    throw new Error("EMAIL_TRANSPORTER_FAILED");
+    throw new Error("Error setting up email transporter: " + error.message);
   }
 };
 
