@@ -12,7 +12,7 @@ const TicketDetailsTemplate = (
   bookingDate,
   bookingTime
 ) => `
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -26,18 +26,18 @@ const TicketDetailsTemplate = (
         font-family: "Inter", sans-serif;
         font-size: 14px;
         margin: 0;
-        padding: 20px; /* Reduced padding for print efficiency */
+        padding: 20px;
         color: #333;
-        background-color: #ffffff; /* White background for print */
+        background-color: #ffffff;
         line-height: 1.5;
       }
 
       .container {
-        max-width: 750px; /* Slightly narrower for print */
+        max-width: 750px;
         margin: 0 auto;
-        border: 1px solid #ccc; /* Simple border for defining the ticket area */
-        box-shadow: none; /* No shadow for print */
-        border-radius: 0; /* No rounded corners for print */
+        border: 1px solid #ccc;
+        box-shadow: none;
+        border-radius: 0;
         overflow: hidden;
       }
 
@@ -46,14 +46,14 @@ const TicketDetailsTemplate = (
         justify-content: space-between;
         align-items: center;
         padding: 20px 30px;
-        background-color: #f0f0f0; /* Light grey header for print, saves ink */
+        background-color: #f0f0f0;
         color: #333;
         border-bottom: 1px solid #ccc;
       }
 
       .header .logo {
-        width: 150px; /* Slightly smaller logo */
-        filter: none; /* Original color for print */
+        width: 150px;
+        filter: none;
       }
 
       .header h1 {
@@ -61,14 +61,14 @@ const TicketDetailsTemplate = (
         margin: 0;
         font-weight: 700;
         letter-spacing: 0.2px;
-        color: #000; /* Black for print */
+        color: #000;
       }
 
       .ticket-info {
         padding: 15px 30px;
-        background-color: #f8f8f8; /* Very light background for this section */
+        background-color: #f8f8f8;
         text-align: right;
-        border-bottom: 1px dashed #ddd; /* Dashed line for visual separation */
+        border-bottom: 1px dashed #ddd;
       }
 
       .ticket-info .barcode-text {
@@ -83,7 +83,7 @@ const TicketDetailsTemplate = (
         font-size: 16px;
         background: #ffffff;
         padding: 6px 12px;
-        border: 1px solid #999; /* Solid border for print clarity */
+        border: 1px solid #999;
         border-radius: 4px;
         color: #000;
         display: inline-block;
@@ -96,7 +96,7 @@ const TicketDetailsTemplate = (
       }
 
       .section:last-of-type {
-        border-bottom: none; /* No border on the last section */
+        border-bottom: none;
       }
 
       .section-title {
@@ -115,32 +115,32 @@ const TicketDetailsTemplate = (
         bottom: 0;
         width: 40px;
         height: 2px;
-        background-color: #666; /* Darker line for print */
+        background-color: #666;
         border-radius: 1px;
       }
 
       table {
         width: 100%;
-        border-collapse: collapse; /* Collapsed borders for tighter print layout */
+        border-collapse: collapse;
         margin-top: 10px;
         background: #ffffff;
       }
 
       th,
       td {
-        padding: 10px 0; /* Reduced padding */
+        padding: 10px 0;
         text-align: left;
-        border-bottom: 1px solid #f0f0f0; /* Very light border */
+        border-bottom: 1px solid #f0f0f0;
       }
 
       th {
-        background-color: #f8f8f8; /* Lightest grey for headers */
+        background-color: #f8f8f8;
         color: #444;
         font-weight: 600;
         font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 0.3px;
-        padding-left: 10px; /* Small indent for header text */
+        padding-left: 10px;
       }
 
       td {
@@ -148,7 +148,7 @@ const TicketDetailsTemplate = (
       }
 
       td strong {
-        color: #000; /* Black for print clarity */
+        color: #000;
         font-weight: 600;
       }
 
@@ -157,13 +157,13 @@ const TicketDetailsTemplate = (
       }
 
       .flight-details-table td {
-        font-weight: 500; /* Slightly bolder for flight details */
+        font-weight: 500;
       }
 
       .total-price {
         font-size: 18px;
         font-weight: 700;
-        color: #000; /* Black for print */
+        color: #000;
         text-align: right;
         padding-right: 10px;
         padding-top: 15px;
@@ -173,8 +173,8 @@ const TicketDetailsTemplate = (
         font-size: 13px;
         margin-top: 20px;
         padding: 10px 15px;
-        background-color: #fffacd; /* Lighter warning yellow */
-        border-left: 4px solid #ccaa00; /* Darker orange accent */
+        background-color: #fffacd;
+        border-left: 4px solid #ccaa00;
         color: #665500;
         border-radius: 4px;
       }
@@ -182,7 +182,7 @@ const TicketDetailsTemplate = (
       .inspirational-quote {
         margin-top: 25px;
         padding: 15px 20px;
-        background-color: #f5fafd; /* Very light blue */
+        background-color: #f5fafd;
         border-left: 3px solid #999;
         font-style: italic;
         color: #666;
@@ -200,8 +200,8 @@ const TicketDetailsTemplate = (
       }
 
       .contact-info a {
-        color: #000; /* Black for print */
-        text-decoration: underline; /* Underline for print links */
+        color: #000;
+        text-decoration: underline;
         font-weight: 500;
         margin: 0 10px;
       }
@@ -225,19 +225,18 @@ const TicketDetailsTemplate = (
         border-top: 1px solid #eee;
       }
 
-      /* --- Print Specific Styles --- */
       @media print {
         body {
           margin: 0;
           padding: 0;
-          font-size: 12px; /* Smaller font for print */
-          color: #000; /* Ensure all text is black for clarity */
-          -webkit-print-color-adjust: exact; /* For background colors on some elements */
+          font-size: 12px;
+          color: #000;
+          -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
 
         .container {
-          border: none; /* No border in print */
+          border: none;
           box-shadow: none;
           margin: 0;
           max-width: 100%;
@@ -248,21 +247,21 @@ const TicketDetailsTemplate = (
         .section,
         .contact-info,
         .footer {
-          padding: 15px 20px; /* Reduced padding for print */
+          padding: 15px 20px;
         }
 
         .header {
-          background-color: #e0e0e0 !important; /* Force light grey background for header */
+          background-color: #e0e0e0 !important;
           color: #000 !important;
           border-bottom: 1px solid #bbb;
         }
 
         .header .logo {
-          filter: none; /* Ensure logo prints in its original colors */
+          filter: none;
         }
 
         .ticket-info {
-          background-color: #f5f5f5 !important; /* Lighter background for ticket info */
+          background-color: #f5f5f5 !important;
         }
 
         .barcode-number {
@@ -274,18 +273,18 @@ const TicketDetailsTemplate = (
         }
 
         th {
-          background-color: #f0f0f0 !important; /* Lighter header background */
+          background-color: #f0f0f0 !important;
         }
 
         .note {
-          background-color: #fff8e1 !important; /* Lighter yellow for notes */
+          background-color: #fff8e1 !important;
           border-left-color: #d4a700 !important;
           color: #5a4b00 !important;
         }
 
         .inspirational-quote {
-          background-color: #edf5ff !important; /* Lighter blue for quote */
-          border-left-color: #a0a0a0 !important; /* Darker border for contrast */
+          background-color: #edf5ff !important;
+          border-left-color: #a0a0a0 !important;
         }
 
         .contact-info a {
@@ -319,36 +318,36 @@ const TicketDetailsTemplate = (
         <div class="barcode-number">QA-${generateTicketNumber()}</div>
       </div>
 
+      <!-- Passenger Information -->
       <div class="section">
         <div class="section-title">Passenger Information</div>
         <table>
           <tr>
-            <td>
-              <strong>Name:</strong>
-              <br />
-              ${passenger.firstName} ${passenger.lastName}
-            </td>
-            <td>
-              <strong>Email:</strong>
-              <br />
-              ${passenger.email}
-            </td>
+            <td><strong>Name:</strong><br />${passenger.firstName} ${
+  passenger.lastName
+}</td>
+            <td><strong>Email:</strong><br />${passenger.email}</td>
           </tr>
           <tr>
-            <td>
-              <strong>Phone:</strong>
-              <br />
-              ${passenger.phoneNumber}
-            </td>
-            <td>
-              <strong>Country:</strong>
-              <br />
-              ${passenger.country}
-            </td>
+            <td><strong>Phone:</strong><br />${passenger.phoneNumber}</td>
+            <td><strong>Country:</strong><br />${passenger.country}</td>
           </tr>
         </table>
       </div>
 
+      <!-- Booking Information -->
+      <div class="section">
+        <div class="section-title">Booking Information</div>
+        <table>
+          <tr>
+            <td><strong>Booking Reference:</strong><br />${bookingReference}</td>
+            <td><strong>Booking Date:</strong><br />${bookingDate}</td>
+            <td><strong>Booking Time:</strong><br />${bookingTime}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Flight Details -->
       <div class="section">
         <div class="section-title">Flight Details</div>
         <table class="flight-details-table">
@@ -378,82 +377,77 @@ const TicketDetailsTemplate = (
           <tr>
             <td>${returnFlight.flightNumber} - CONFIRMED</td>
             <td>${returnFlight.departureDate}</td>
-            <td>${returnFlight.departureCity}  ${
-  returnFlight.departureTime
-}</td>
+            <td>${returnFlight.departureCity} ${returnFlight.departureTime}</td>
             <td>${returnFlight.arrivalDate}</td>
             <td>${returnFlight.arrivalCity} ${returnFlight.arrivalTime}</td>
           </tr>
           <tr>
             <td colspan="5">
               <strong>Baggage Allowance:</strong>
-              ${"25KG x 2 per passenger"}
+              25KG x 2 per passenger
             </td>
           </tr>
         </table>
       </div>
 
+      <!-- Fare Summary -->
       <div class="section">
         <div class="section-title">Fare Summary</div>
         <table>
           <tr>
             <td>
-              <strong>Base Fare:</strong>
-              <br />
-              $${generateTaxesAndFees(currentPrice).fees}
+              <strong>Base Fare:</strong><br />$${Number(
+                generateTaxesAndFees(currentPrice).fees
+              ).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </td>
             <td>
-              <strong>Taxes & Fees:</strong>
-              <br />
-              $${
+              <strong>Taxes & Fees:</strong><br />$${Number(
                 generateTaxesAndFees(currentPrice).tax
-              } (15% tax) + $50 (flat fee)
+              ).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })} (15% tax) + $50 (flat fee)
             </td>
           </tr>
           <tr>
             <td colspan="2" class="total-price">
-              <strong>Total Price:</strong>
-              $${currentPrice.toFixed(2).toLocaleString("en-US")}
+              <strong>Total Price:</strong> $${Number(
+                currentPrice
+              ).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </td>
           </tr>
           <tr>
-            <td colspan="2">
-              <strong>Payment Method:</strong>
-              ${"Credit Card"}
-            </td>
+            <td colspan="2"><strong>Payment Method:</strong> Credit Card</td>
           </tr>
         </table>
       </div>
 
       <div class="section">
         <div class="inspirational-quote">
-          "The sky is not the limit — it's where your story begins. We look
-          forward to welcoming you aboard."
+          "The sky is not the limit — it's where your story begins. We look forward to welcoming you aboard."
         </div>
       </div>
 
       <div class="contact-info">
         <p>Need assistance or have questions?</p>
         <div>
-          <a href="mailto:support@quencerairlines.com">
-            <span class="icon">📧</span>
-            support@quencerairlines.com
-          </a>
-          <a href="https://www.quencerairlines.com">
-            <span class="icon">🌐</span>
-            www.quencerairlines.com
-          </a>
+          <a href="mailto:support@quencerairlines.com"><span class="icon">📧</span>support@quencerairlines.com</a>
+          <a href="https://www.quencerairlines.com"><span class="icon">🌐</span>www.quencerairlines.com</a>
         </div>
       </div>
 
       <div class="footer">
-        © ${new Date().getFullYear()} Quencer Airlines. All rights reserved.
-        Thank you for choosing Quencer Airlines.
+        © ${new Date().getFullYear()} Quencer Airlines. All rights reserved. Thank you for choosing Quencer Airlines.
       </div>
     </div>
-  </body>   
+  </body>
 </html>
-
 `;
 
 export default TicketDetailsTemplate;

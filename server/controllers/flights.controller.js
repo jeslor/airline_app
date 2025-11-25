@@ -1,8 +1,8 @@
 import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
-import puppeteer from "puppeteer";
 import nodemailer from "nodemailer";
+import htmlPdf from "html-pdf-node";
 import {
   generateBookingReference,
   generateCabinZone,
@@ -420,24 +420,9 @@ const createPDF = async (
   bookingDate,
   bookingTime
 ) => {
-  let browser;
-  let ticketPage;
-
   try {
-    // Launch Puppeteer browser
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
-    });
-
-    // Create a new page
-    ticketPage = await browser.newPage();
-
-    // Set viewport for PDF printing
-    await ticketPage.setViewport({ width: 1200, height: 800 });
-
-    // Generate HTML content
-    const ticketHtml = TicketDetailsTemplate(
+    // Generate HTML from template
+    const html = TicketDetailsTemplate(
       passenger,
       outboundFlight,
       returnFlight,
@@ -447,43 +432,31 @@ const createPDF = async (
       bookingTime
     );
 
-    // Set HTML content and wait for network to be idle
-    await ticketPage.setContent(ticketHtml, {
-      waitUntil: "networkidle0",
-      timeout: 120000, // 2 minutes
-    });
-
-    // Wait for fonts to load
-    try {
-      await ticketPage.evaluate(() => document.fonts && document.fonts.ready);
-    } catch (_) {
-      // ignore if fonts API not available
-    }
-
-    // Generate PDF
-    const ticketPdfBuffer = await ticketPage.pdf({
+    // Define PDF options
+    const options = {
       format: "A4",
       printBackground: true,
       margin: {
         top: "10mm",
-        right: "10mm",
         bottom: "10mm",
         left: "10mm",
+        right: "10mm",
       },
-    });
+    };
 
-    return ticketPdfBuffer;
-  } catch (error) {
-    console.error("Error generating flight ticket PDF:", error);
-    throw new Error("Error generating flight ticket PDF: " + error.message);
-  } finally {
-    // Cleanup
-    try {
-      if (ticketPage) await ticketPage.close();
-    } catch (e) {}
-    try {
-      if (browser) await browser.close();
-    } catch (e) {}
+    // html-pdf-node expects a "file" or "html" object
+    const file = { content: html };
+
+    // Generate PDF buffer
+    const pdfBuffer = await htmlPdf.generatePdf(file, options);
+
+    // Optionally save PDF locally
+    // fs.writeFileSync("ticket.pdf", pdfBuffer);
+
+    return pdfBuffer; // Return PDF buffer directly
+  } catch (err) {
+    console.error("Error generating PDF:", err);
+    throw new Error("PDF generation failed: " + err.message);
   }
 };
 
