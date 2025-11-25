@@ -10,6 +10,7 @@ import {
   generateSeatNumbers,
 } from "../utils/ticketAndBookingGenerator.js";
 import TicketDetailsTemplate from "../constants/ticketTemplate.js";
+import { generatePDF } from "../utils/pdfHelper.js";
 
 const getFlights = asyncWrapper(async (req, res) => {
   try {
@@ -87,6 +88,8 @@ const bookFlight = asyncWrapper(async (req, res) => {
     //1. build the ticket pdf file
     let ticketPdfBuffer;
     try {
+      console.log("Creating PDF with booking data:", passenger);
+
       ticketPdfBuffer = await createPDF(
         passenger,
         outboundFlight,
@@ -422,7 +425,7 @@ const createPDF = async (
 ) => {
   try {
     // Generate HTML from template
-    const html = TicketDetailsTemplate(
+    const htmlContent = TicketDetailsTemplate(
       passenger,
       outboundFlight,
       returnFlight,
@@ -432,33 +435,65 @@ const createPDF = async (
       bookingTime
     );
 
-    // Define PDF options
-    const options = {
-      format: "A4",
-      printBackground: true,
-      margin: {
-        top: "10mm",
-        bottom: "10mm",
-        left: "10mm",
-        right: "10mm",
-      },
-    };
-
-    // html-pdf-node expects a "file" or "html" object
-    const file = { content: html };
-
     // Generate PDF buffer
-    const pdfBuffer = await htmlPdf.generatePdf(file, options);
+    const pdfBuffer = await generatePDF(htmlContent);
 
-    // Optionally save PDF locally
-    // fs.writeFileSync("ticket.pdf", pdfBuffer);
-
+    // Send as response
     return pdfBuffer; // Return PDF buffer directly
   } catch (err) {
-    console.error("Error generating PDF:", err);
+    console.error("Error creating PDF:", err);
     throw new Error("PDF generation failed: " + err.message);
   }
 };
+
+// const createPDF = async (
+//   passenger,
+//   outboundFlight,
+//   returnFlight,
+//   currentPrice,
+//   bookingReference,
+//   bookingDate,
+//   bookingTime
+// ) => {
+//   try {
+//     // Generate HTML from template
+//     const html = TicketDetailsTemplate(
+//       passenger,
+//       outboundFlight,
+//       returnFlight,
+//       currentPrice,
+//       bookingReference,
+//       bookingDate,
+//       bookingTime
+//     );
+
+//     // Define PDF options
+//     const options = {
+//       format: "A4",
+//       printBackground: true,
+//       margin: {
+//         top: "10mm",
+//         bottom: "10mm",
+//         left: "10mm",
+//         right: "10mm",
+//       },
+//     };
+
+//     // html-pdf-node expects a "file" or "html" object
+//     const file = { content: html };
+
+//     // Generate PDF buffer
+//     const pdfBuffer = await htmlPdf.generatePdf(file, options);
+
+//     // Optionally save PDF locally
+//     // fs.writeFileSync("ticket.pdf", pdfBuffer);
+
+//     return pdfBuffer; // Return PDF buffer directly
+//   } catch (err) {
+//     console.error("Error generating PDF:", err);
+//     throw new Error("PDF generation failed: " + err.message);
+//   }
+// };
 
 const createEmailTransporter = async () => {
   try {
