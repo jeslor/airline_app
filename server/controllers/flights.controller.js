@@ -2,7 +2,6 @@ import { cleanAIJsonResponse } from "../utils/helpers.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import genAI from "../configs/GoogleAIService.js";
 import nodemailer from "nodemailer";
-import htmlPdf from "html-pdf-node";
 import {
   generateBookingReference,
   generateCabinZone,
