@@ -70,11 +70,9 @@ export function PersonalDetailsForm() {
           bookingTime: format(new Date().toISOString(), "HH:mm"),
         }),
       });
-      console.log("Response from booking API:", response);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Error data from booking API:", errorData);
         throw new Error("Failed to book flight", {
           cause: errorData,
         });
