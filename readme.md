@@ -11,6 +11,7 @@
 - **Features:** AI-powered flight search (Google Generative AI), dynamic PDF e-ticket generation (html-pdf-node), automated email confirmations, and real-time booking management
 
 **Live URLs:**
+
 - Frontend: https://airline-app-gamma.vercel.app
 - Backend API: https://airline-app-i8q8.onrender.com
 
@@ -32,34 +33,36 @@
 ## 🛠️ Tech Stack
 
 ### Frontend (`/client`)
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Build Tool** | Vite | Lightning-fast HMR & ESM-native bundling |
-| **Framework** | React 18 | Component-based UI with hooks |
-| **Language** | TypeScript | Type-safe development |
-| **Styling** | Tailwind CSS | Utility-first CSS framework |
-| **UI Components** | shadcn/ui | Accessible, composable components |
-| **Forms** | React Hook Form + Zod | Type-safe form validation |
-| **HTTP Client** | Fetch API | Built-in browser API for API calls |
-| **State** | React Context API | Flight booking context provider |
-| **3D Graphics** | Three.js | Interactive globe visualization |
-| **Animation** | Lottie | Smooth loading & interactive animations |
-| **Hosting** | Vercel | Auto-deployments from Git |
+
+| Layer             | Technology            | Purpose                                  |
+| ----------------- | --------------------- | ---------------------------------------- |
+| **Build Tool**    | Vite                  | Lightning-fast HMR & ESM-native bundling |
+| **Framework**     | React 18              | Component-based UI with hooks            |
+| **Language**      | TypeScript            | Type-safe development                    |
+| **Styling**       | Tailwind CSS          | Utility-first CSS framework              |
+| **UI Components** | shadcn/ui             | Accessible, composable components        |
+| **Forms**         | React Hook Form + Zod | Type-safe form validation                |
+| **HTTP Client**   | Fetch API             | Built-in browser API for API calls       |
+| **State**         | React Context API     | Flight booking context provider          |
+| **3D Graphics**   | Three.js              | Interactive globe visualization          |
+| **Animation**     | Lottie                | Smooth loading & interactive animations  |
+| **Hosting**       | Vercel                | Auto-deployments from Git                |
 
 ### Backend (`/server`)
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Runtime** | Node.js | JavaScript server environment |
-| **Framework** | Express.js | Lightweight, fast web framework |
-| **Language** | JavaScript (ES6+) | Modern async/await patterns |
-| **Database** | MongoDB | NoSQL document storage |
-| **ORM** | Prisma | Type-safe database queries |
-| **PDF Generation** | html-pdf-node | Serverless-friendly PDF creation |
-| **Email** | Nodemailer | SMTP email delivery |
-| **AI** | Google Generative AI | Dynamic flight data generation |
-| **Auth** | Environment-based CORS | Request origin validation |
-| **Middleware** | CORS, Body-parser | Request handling & security |
-| **Hosting** | Render | Container-based deployment |
+
+| Layer              | Technology             | Purpose                          |
+| ------------------ | ---------------------- | -------------------------------- |
+| **Runtime**        | Node.js                | JavaScript server environment    |
+| **Framework**      | Express.js             | Lightweight, fast web framework  |
+| **Language**       | JavaScript (ES6+)      | Modern async/await patterns      |
+| **Database**       | MongoDB                | NoSQL document storage           |
+| **ORM**            | Prisma                 | Type-safe database queries       |
+| **PDF Generation** | html-pdf-node          | Serverless-friendly PDF creation |
+| **Email**          | Nodemailer             | SMTP email delivery              |
+| **AI**             | Google Generative AI   | Dynamic flight data generation   |
+| **Auth**           | Environment-based CORS | Request origin validation        |
+| **Middleware**     | CORS, Body-parser      | Request handling & security      |
+| **Hosting**        | Render                 | Container-based deployment       |
 
 ---
 
@@ -114,26 +117,31 @@ airline_app/
 ### Quick Setup
 
 #### 1. Clone Repository
+
 ```bash
 git clone https://github.com/jeslor/airline_app.git
 cd airline_app
 ```
 
 #### 2. Setup Frontend
+
 ```bash
 cd client
 npm install
 npm run dev
 ```
+
 Frontend runs at `http://localhost:5173`
 
 #### 3. Setup Backend
+
 ```bash
 cd ../server
 npm install
 cp server.env.example server.env  # Add your credentials
 npm start
 ```
+
 Backend runs at `http://localhost:3000`
 
 ---
@@ -205,7 +213,9 @@ VITE_API_BASE_URL=http://localhost:3000
 ## 📡 API Endpoints
 
 ### Flight Search
+
 **POST** `/api/flights`
+
 ```json
 {
   "origin": "JFK",
@@ -216,7 +226,9 @@ VITE_API_BASE_URL=http://localhost:3000
 ```
 
 ### Book Flight
+
 **POST** `/api/book`
+
 ```json
 {
   "passenger": {
@@ -227,8 +239,12 @@ VITE_API_BASE_URL=http://localhost:3000
     "phoneNumber": "+1234567890",
     "country": "USA"
   },
-  "outboundFlight": { /* flight object */ },
-  "returnFlight": { /* flight object */ },
+  "outboundFlight": {
+    /* flight object */
+  },
+  "returnFlight": {
+    /* flight object */
+  },
   "bookingDate": "2024-11-25",
   "bookingTime": "14:30",
   "totalPrice": "$450.00"
@@ -236,6 +252,7 @@ VITE_API_BASE_URL=http://localhost:3000
 ```
 
 Response:
+
 ```json
 {
   "message": "Email with Ticket sent successfully!",
@@ -259,6 +276,7 @@ Response:
 ## 🔧 Development
 
 ### Frontend Development
+
 ```bash
 cd client
 npm run dev        # Start Vite dev server with HMR
@@ -268,12 +286,14 @@ npm run lint       # Run ESLint
 ```
 
 ### Backend Development
+
 ```bash
 cd server
 npm start          # Start Express server
 ```
 
 ### Running Both Together
+
 ```bash
 # Terminal 1 - Frontend
 cd client && npm run dev
@@ -286,24 +306,26 @@ cd server && npm start
 
 ## 🐛 Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| **CORS errors** | Verify `ALLOWED_ORIGINS` env var includes frontend URL |
-| **PDF not generating** | Check html-pdf-node is installed: `npm list html-pdf-node` |
-| **Emails not sending** | Verify EMAIL_* credentials and port 465 is open |
-| **MongoDB connection fails** | Test connection string, ensure IP whitelist in Atlas |
-| **Vite build fails** | Clear `.vite` cache: `rm -rf .vite && npm run build` |
+| Issue                        | Solution                                                   |
+| ---------------------------- | ---------------------------------------------------------- |
+| **CORS errors**              | Verify `ALLOWED_ORIGINS` env var includes frontend URL     |
+| **PDF not generating**       | Check html-pdf-node is installed: `npm list html-pdf-node` |
+| **Emails not sending**       | Verify EMAIL\_\* credentials and port 465 is open          |
+| **MongoDB connection fails** | Test connection string, ensure IP whitelist in Atlas       |
+| **Vite build fails**         | Clear `.vite` cache: `rm -rf .vite && npm run build`       |
 
 ---
 
 ## 📊 Performance
 
 ### Frontend Metrics
+
 - Bundle size: ~150KB (gzipped)
 - Lighthouse Score: 92+
 - First Contentful Paint (FCP): <1.5s
 
 ### Backend Metrics
+
 - Response time (flight search): <2s (with AI generation)
 - Response time (PDF generation): <1s
 - Memory usage: ~50MB at baseline
@@ -328,6 +350,7 @@ ISC License - Jeslor Ssozi
 ## 📞 Support
 
 For issues, questions, or suggestions:
+
 - Open an issue on [GitHub](https://github.com/jeslor/airline_app/issues)
 - Check existing documentation in `/server/README.md` and `/client/README.md`
 
