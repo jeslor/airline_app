@@ -11,7 +11,7 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("DBURL")
+  // url      = env("DBURL")
 }
 
 model Airline {

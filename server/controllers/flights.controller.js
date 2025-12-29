@@ -19,21 +19,69 @@ const getFlights = asyncWrapper(async (req, res) => {
     }
 
     const prompt = `
- You are a special travel agent, search the web for the best flights available  from ${body.origin} to ${body.destination} on ${body.departDate}  and ${body.returnDate}.
-    - make sure the data you return is an object with the following properties and with no text before or after the JSON response:
-    - make sure you find both outboundFlights and returnFlights: {outboundFlights: [], returnFlights: []}
-    - make sure each flight is complete from the starting city to the final destination city, let the connections be in the layover, each layover should have the airport code, flight number, city, and duration.
-    - make sure you include the aircraft type, flight number, departure and arrival times, departure and arrival dates, airport codes, departure and arrival cities, flight duration, and the airline each as an independent property of the object.
-    - Include the price for each flight option.
-    - Make sure you return at least 7 options.
-    - flight numbers (formatted as QF####), departure/arrival times and dates (human-readable), airport codes, cities, duration, and the airline (all renamed to "Quencer Airlines").
-    - make sure you arrange the information for example Departure , arrival and any layovers in individual properties.
-    - make sure the layovers are labeled as layovers and not layover.
-    -This information is going to be used to generate a demo flight ticket so include the dates and times in a human-readable format, plus other relevant details.
+You are a flight data generator. Generate realistic flight data from ${body.origin} to ${body.destination} on ${body.departDate} and return on ${body.returnDate}.
+
+Return ONLY valid JSON with NO text before or after. Use this EXACT structure:
+{
+  "outboundFlights": [
+    {
+      "airline": "Quencer Airlines",
+      "flightNumber": "QF1234",
+      "departureCity": "New York",
+      "arrivalCity": "Los Angeles",
+      "departureAirportCode": "JFK",
+      "arrivalAirportCode": "LAX",
+      "departureDate": "January 15, 2025",
+      "arrivalDate": "January 15, 2025",
+      "departureTime": "08:00 AM",
+      "arrivalTime": "11:30 AM",
+      "flightDuration": "5h 30m",
+      "aircraftType": "Boeing 737-800",
+      "price": 450,
+      "layovers": [
+        {
+          "city": "Chicago",
+          "airportCode": "ORD",
+          "flightNumber": "QF5678",
+          "duration": "1h 30m"
+        }
+      ]
+    }
+  ],
+  "returnFlights": [
+    {
+      "airline": "Quencer Airlines",
+      "flightNumber": "QF4321",
+      "departureCity": "Los Angeles",
+      "arrivalCity": "New York",
+      "departureAirportCode": "LAX",
+      "arrivalAirportCode": "JFK",
+      "departureDate": "January 20, 2025",
+      "arrivalDate": "January 20, 2025",
+      "departureTime": "02:00 PM",
+      "arrivalTime": "10:30 PM",
+      "flightDuration": "5h 30m",
+      "aircraftType": "Airbus A320",
+      "price": 480,
+      "layovers": []
+    }
+  ]
+}
+
+IMPORTANT RULES:
+- Generate at least 5 flight options for BOTH outboundFlights AND returnFlights
+- All airlines must be "Quencer Airlines"
+- Flight numbers format: QF#### (4 digits)
+- Dates in human-readable format: "Month Day, Year" (e.g., "January 15, 2025")
+- Times in 12-hour format with AM/PM
+- price must be a NUMBER (not string), between 200-2000
+- layovers is an array (empty [] if non-stop, or contains layover objects)
+- Include variety: some non-stop, some with 1-2 layovers
+- Use realistic aircraft types: Boeing 737, Boeing 777, Airbus A320, Airbus A350, etc.
 `;
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-001",
+      model: "gemini-2.5-flash",
     });
 
     const result = await model.generateContent(prompt);
@@ -87,8 +135,6 @@ const bookFlight = asyncWrapper(async (req, res) => {
     //1. build the ticket pdf file
     let ticketPdfBuffer;
     try {
-      console.log("Creating PDF with booking data:", passenger);
-
       ticketPdfBuffer = await createPDF(
         passenger,
         outboundFlight,
@@ -444,55 +490,6 @@ const createPDF = async (
     throw new Error("PDF generation failed: " + err.message);
   }
 };
-
-// const createPDF = async (
-//   passenger,
-//   outboundFlight,
-//   returnFlight,
-//   currentPrice,
-//   bookingReference,
-//   bookingDate,
-//   bookingTime
-// ) => {
-//   try {
-//     // Generate HTML from template
-//     const html = TicketDetailsTemplate(
-//       passenger,
-//       outboundFlight,
-//       returnFlight,
-//       currentPrice,
-//       bookingReference,
-//       bookingDate,
-//       bookingTime
-//     );
-
-//     // Define PDF options
-//     const options = {
-//       format: "A4",
-//       printBackground: true,
-//       margin: {
-//         top: "10mm",
-//         bottom: "10mm",
-//         left: "10mm",
-//         right: "10mm",
-//       },
-//     };
-
-//     // html-pdf-node expects a "file" or "html" object
-//     const file = { content: html };
-
-//     // Generate PDF buffer
-//     const pdfBuffer = await htmlPdf.generatePdf(file, options);
-
-//     // Optionally save PDF locally
-//     // fs.writeFileSync("ticket.pdf", pdfBuffer);
-
-//     return pdfBuffer; // Return PDF buffer directly
-//   } catch (err) {
-//     console.error("Error generating PDF:", err);
-//     throw new Error("PDF generation failed: " + err.message);
-//   }
-// };
 
 const createEmailTransporter = async () => {
   try {
