@@ -27,7 +27,6 @@ function Flights({ flights }: { flights: any[] }) {
       })
     );
   };
-  console.log(flights);
 
   if (!flights || flights.length === 0) {
     return <p className="text-center text-gray-500">No flights found.</p>;

@@ -54,7 +54,6 @@ const SearchFlights = () => {
   const onSubmit = async (data: z.infer<typeof flightBookingSchema>) => {
     try {
       handleSetIsSearchingFlights(true);
-
       const flights = await fetch(`${apiUrl}/flights`, {
         method: "POST",
         headers: {
@@ -63,6 +62,7 @@ const SearchFlights = () => {
         },
         body: JSON.stringify(data),
       });
+      console.log(flights);
 
       if (!flights.ok) {
         throw new Error("Failed to fetch flights");
