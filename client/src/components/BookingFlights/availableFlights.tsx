@@ -69,12 +69,7 @@ const AvailableFlights = () => {
                   </span>
                   <span className="text-[20px] text-gray-500">
                     {" "}
-                    on{" "}
-                    {allFlights.outboundFlights[0]?.departureDate
-                      ? new Date(
-                          allFlights.outboundFlights[0].departureDate
-                        ).toLocaleDateString()
-                      : "N/A"}
+                    on {allFlights.outboundFlights[0]?.departureDate || "N/A"}
                   </span>
                 </span>
               </h3>
@@ -99,12 +94,7 @@ const AvailableFlights = () => {
                   </span>
                   <span className="text-[20px] text-gray-500">
                     {" "}
-                    on{" "}
-                    {allFlights.returnFlights[0]?.departureDate
-                      ? new Date(
-                          allFlights.returnFlights[0].departureDate
-                        ).toLocaleDateString()
-                      : "N/A"}
+                    on {allFlights.returnFlights[0]?.departureDate || "N/A"}
                   </span>
                 </span>
               </h3>

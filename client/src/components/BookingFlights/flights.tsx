@@ -28,6 +28,8 @@ function Flights({ flights }: { flights: any[] }) {
       })
     );
   };
+  console.log(flights);
+
   if (!flights || flights.length === 0) {
     return <p className="text-center text-gray-500">No flights found.</p>;
   }
@@ -77,8 +79,7 @@ function Flights({ flights }: { flights: any[] }) {
                   <div className="text-left">
                     <p>
                       <span className="text-[12px] font-regular text-gray-400">
-                        {format(flight.departureDate, "PPP")} to{" "}
-                        {format(flight.arrivalDate, "PPP")}
+                        {flight.departureDate} to {flight.arrivalDate}
                       </span>
                     </p>
                     <p className="text-md font-medium">
