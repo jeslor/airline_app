@@ -23,7 +23,7 @@
 ✅ **Stripe Payments** - Real PaymentIntent flow (test mode); webhook-confirmed, idempotent booking issuance  
 ✅ **Persisted Bookings** - Every booking is stored in MongoDB via Prisma, lookup by reference  
 ✅ **Secure Booking** - Server-side validation, CORS allowlist, rate limiting, error handling  
-✅ **PDF E-Tickets** - Puppeteer-rendered e-ticket with QR code, PNR, seats, and terminal/gate details  
+✅ **PDF E-Tickets** - Puppeteer-rendered e-ticket with QR code, PNR, seats, and a full multi-segment itinerary (every stop/layover shown with its own connecting flight and times, not just origin→destination)  
 ✅ **Email Confirmations** - Automated booking confirmations with attached tickets  
 ✅ **Responsive UI** - Mobile-first design with Tailwind CSS  
 ✅ **Real-time Validation** - React Hook Form + Zod schema validation  
@@ -86,16 +86,17 @@ airline_app/
 │   └── package.json
 │
 ├── server/                  # Backend - Node.js Express app
-│   ├── src/ (or root)
-│   │   ├── controllers/     # Business logic (flights.controller.js)
-│   │   ├── routes/          # API routes (flights.routes.js)
-│   │   ├── utils/           # Helper functions
-│   │   ├── constants/       # Email templates, configs
-│   │   ├── configs/         # Google AI service setup
-│   │   └── server.js        # Express server
+│   ├── controllers/         # flights / bookings / webhooks (Stripe) controllers
+│   ├── routes/               # API routes (flights, bookings, webhooks)
+│   ├── schemas/              # Zod request validation (mirrors client schemas)
+│   ├── utils/                 # offer signing, PDF/email delivery, Prisma/Stripe/Resend clients
+│   ├── constants/            # branding.js, ticketTemplate.js (e-ticket HTML)
+│   ├── configs/               # Google AI service setup
+│   ├── tests/                 # Vitest unit tests
 │   ├── prisma/
-│   │   └── schema.prisma    # Database schema
-│   ├── server.env           # Environment variables
+│   │   └── schema.prisma    # Database schema (Booking model)
+│   ├── server.env.example   # Copy to server.env and fill in
+│   ├── server.js             # Express server
 │   ├── package.json
 │   └── README.md            # Server-specific docs
 │
@@ -113,9 +114,10 @@ airline_app/
 - **Node.js** v16+ (v18+ recommended)
 - **npm** or **Yarn**
 - **Git**
-- **MongoDB** connection string (MongoDB Atlas or local)
-- **Google API Key** for Generative AI
+- **MongoDB** connection string (MongoDB Atlas or local) - must include a database name in the path
+- **Google API Key** for Generative AI (aistudio.google.com)
 - **Resend API key** for sending emails (resend.com)
+- **Stripe account** (test mode) for payments (dashboard.stripe.com)
 
 ### Quick Setup
 
@@ -131,6 +133,7 @@ cd airline_app
 ```bash
 cd client
 npm install
+cp .env.example .env  # Add your Stripe publishable key
 npm run dev
 ```
 
@@ -140,8 +143,10 @@ Frontend runs at `http://localhost:5173`
 
 ```bash
 cd ../server
-npm install
-cp server.env.example server.env  # Add your credentials
+npm install                      # also generates the Prisma client (postinstall)
+cp server.env.example server.env # Add your credentials
+npx prisma db push               # sync the Booking schema to your database
+npm run seed                     # optional - a few demo bookings to explore
 npm start
 ```
 
@@ -151,7 +156,9 @@ Backend runs at `http://localhost:3000`
 
 ## 🔐 Environment Variables
 
-### Backend (server/.env or server.env)
+Every variable below has a documented template you can copy: `server/server.env.example` → `server/server.env`, and `client/.env.example` → `client/.env`.
+
+### Backend (server/server.env)
 
 ```env
 # Server
@@ -200,20 +207,21 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ### Frontend → Vercel
 
 1. Push code to GitHub
-2. Connect repo at [vercel.com](https://vercel.com)
-3. Set environment variables:
-   - `VITE_API_BASE_URL=https://airline-app-i8q8.onrender.com`
+2. Connect repo at [vercel.com](https://vercel.com), root directory `client`
+3. Set environment variables (see [Environment Variables](#-environment-variables) above): `VITE_API_URL`, `VITE_STRIPE_PUBLISHABLE_KEY`
 4. Auto-deploy on every push to `main`
 
 **Current:** https://airline-app-gamma.vercel.app
 
 ### Backend → Render
 
-1. Create Web Service on [render.com](https://render.com)
+1. Create Web Service on [render.com](https://render.com), root directory `server`
 2. Connect GitHub repo
-3. Set root directory to `server`
-4. Set environment variables (see .env above)
-5. Deploy command: `npm install && npm start`
+3. **Build Command**: `npm install` (this alone also generates the Prisma client via a `postinstall` hook, and downloads Puppeteer's bundled Chromium - no extra install steps needed)
+4. **Start Command**: `npm start`
+5. Set environment variables (see above), plus `NODE_ENV=production`
+6. Register a Stripe webhook endpoint pointing at `https://<your-render-url>/api/webhooks/stripe` (events: `payment_intent.succeeded`, `payment_intent.payment_failed`) and set its signing secret as `STRIPE_WEBHOOK_SECRET`
+7. Push to `main` → Render auto-deploys
 
 **Current:** https://airline-app-i8q8.onrender.com
 

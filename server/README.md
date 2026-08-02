@@ -54,6 +54,8 @@ Render (our deployment target) is a **persistent container**, not a serverless f
 
 The ticket template (`server/constants/ticketTemplate.js`) renders a QR code, PNR, persisted seat numbers/ticket number, terminal/boarding zone, fare basis, and terms — the ticket number and seat numbers are generated **once**, at Stripe webhook confirmation time, and persisted on the `Booking` record so the PDF, the confirmation email, and any later `GET /api/bookings/:reference` lookup always agree.
 
+Each flight is rendered as its own multi-segment itinerary rather than a flat origin→destination row: every leg (including layovers) gets its own timeline entry with departure/arrival times and airports, with a distinct callout between legs (e.g. *"Change planes in Chicago (ORD) — 1h 30m layover"*). This depends on the AI flight-search prompt (`flights.controller.js`) generating `arrivalTime`/`departureTime` per layover, not just a duration.
+
 ---
 
 ## 🚀 Getting Started
@@ -73,10 +75,12 @@ The ticket template (`server/constants/ticketTemplate.js`) renders a QR code, PN
 git clone https://github.com/jeslor/airline_app.git
 cd airline_app/server
 
-# Install dependencies
+# Install dependencies - this also runs `prisma generate` automatically
+# (postinstall hook) and downloads Puppeteer's bundled Chromium
 npm install
 
-# Create a server.env file (see Environment Variables below)
+# Copy the env template and fill in real values (see Environment Variables below)
+cp server.env.example server.env
 
 # Push the Prisma schema to your database
 npx prisma db push
@@ -92,7 +96,7 @@ npm start
 
 ## 🔐 Environment Variables
 
-Create a `server.env` file in the root of the `/server` folder:
+Copy `server.env.example` to `server.env` in the root of the `/server` folder and fill in real values:
 
 ```env
 # Server
@@ -221,7 +225,7 @@ Stripe webhook endpoint (raw body, signature-verified via `STRIPE_WEBHOOK_SECRET
 
 1. Go to [Render.com](https://render.com) → New Web Service → connect this repo
 2. **Root Directory**: `server`
-3. **Build Command**: `npm install`
+3. **Build Command**: `npm install` (the `postinstall` hook runs `prisma generate` automatically - no separate Prisma or Playwright install step needed)
 4. **Start Command**: `npm start`
 5. Environment variables (Render dashboard → Environment): all of the vars listed above, plus `NODE_ENV=production`
 6. Register a webhook endpoint in the Stripe dashboard pointing at `https://<your-render-url>/api/webhooks/stripe`, and set its signing secret as `STRIPE_WEBHOOK_SECRET`
