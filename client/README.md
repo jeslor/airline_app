@@ -1,6 +1,6 @@
 # 🎨 Frontend - Quencer Airlines Client
 
-Modern, responsive flight booking UI built with Vite, React, TypeScript, and Tailwind CSS.
+Modern, responsive flight booking UI built with Vite, React, TypeScript, Tailwind CSS, and Stripe Elements for payment.
 
 ---
 
@@ -8,28 +8,33 @@ Modern, responsive flight booking UI built with Vite, React, TypeScript, and Tai
 
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
 - [Project Structure](#project-structure)
 - [Key Components](#key-components)
-- [Development](#development)
+- [API Integration](#api-integration)
+- [Styling Guide](#styling-guide)
 - [Building & Deployment](#building--deployment)
-- [Performance](#performance)
+- [Common Issues](#common-issues)
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Tool                | Purpose                                      | Version |
-| ------------------- | -------------------------------------------- | ------- |
-| **Vite**            | Build tool & dev server (lightning-fast HMR) | ^5.0    |
-| **React**           | UI framework with hooks                      | ^18     |
-| **TypeScript**      | Type-safe JavaScript                         | ^5.0    |
-| **Tailwind CSS**    | Utility-first CSS framework                  | ^3.0    |
-| **shadcn/ui**       | Accessible React components                  | Latest  |
-| **React Hook Form** | Lightweight form state management            | ^7.0    |
-| **Zod**             | TypeScript-first schema validation           | ^3.0    |
-| **Three.js**        | 3D globe visualization                       | ^r128+  |
-| **Lottie**          | Animation library                            | ^2.0    |
-| **ESLint**          | Code quality & style linting                 | ^8.0    |
+| Tool                       | Purpose                                      |
+| --------------------------- | --------------------------------------------- |
+| **Vite**                   | Build tool & dev server (HMR)                |
+| **React 19**                | UI framework with hooks                      |
+| **TypeScript**              | Type-safe JavaScript                         |
+| **Tailwind CSS v4**         | Utility-first CSS framework                  |
+| **shadcn/ui**               | Accessible React components                  |
+| **React Hook Form + Zod**   | Form state management & schema validation    |
+| **@stripe/react-stripe-js** | Embedded Stripe Payment Element for checkout |
+| **Three.js / @react-three** | 3D globe visualization                       |
+| **Framer Motion**            | Animation                                    |
+| **Lottie**                  | Loading animations                           |
+| **ESLint**                  | Code quality & style linting                 |
+
+See `package.json` for exact installed versions.
 
 ---
 
@@ -37,19 +42,17 @@ Modern, responsive flight booking UI built with Vite, React, TypeScript, and Tai
 
 ### Prerequisites
 
-- Node.js v16+ (v18+ recommended)
+- Node.js v18+
 - npm or Yarn
+- A running instance of the [backend](../server/README.md) (local or deployed) and its API URL
+- A Stripe publishable key (test mode) - see the backend README for how to get one
 
 ### Installation
 
 ```bash
 cd client
 npm install
-```
-
-### Development Server
-
-```bash
+cp .env.example .env   # fill in your Stripe publishable key + backend API URL
 npm run dev
 ```
 
@@ -70,70 +73,69 @@ npm run lint      # Check for style/quality issues
 
 ---
 
+## 📦 Environment Variables
+
+Copy `.env.example` to `.env`:
+
+```env
+# Backend API base URL used during local development (npm run dev)
+VITE_API_URL_LOCAL=http://localhost:3000/api
+
+# Backend API base URL used in production builds
+VITE_API_URL=https://your-backend-url.com/api
+
+# Stripe (test mode) publishable key - safe to expose client-side
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+```
+
+Which of `VITE_API_URL`/`VITE_API_URL_LOCAL` is used is decided by `import.meta.env.DEV` (Vite's own dev-vs-build flag - see `src/lib/api.ts`), not `NODE_ENV`.
+
+---
+
 ## 📁 Project Structure
 
 ```
 src/
-├── components/              # React components
-│   ├── booking/            # Booking flow components
-│   │   ├── BookingBubble.tsx
-│   │   └── FinalizeBooking.tsx
-│   ├── BookingFlights/     # Flight selection
+├── components/
+│   ├── booking/
+│   │   ├── BookingBubble.tsx      # Sticky "selected flights" summary bar
+│   │   ├── FinalizeBooking.tsx    # Review + passenger details step
+│   │   └── PaymentStep.tsx        # Stripe Elements payment step
+│   ├── BookingFlights/            # Flight search results & selection
 │   │   ├── availableFlights.tsx
 │   │   └── flights.tsx
-│   ├── Destinations/       # Destination explorer
+│   ├── Destinations/
 │   │   └── Destinations.tsx
-│   ├── forms/              # Form components
-│   │   ├── PersonalDetailsForm.tsx
+│   ├── forms/
+│   │   ├── PersonalDetailsForm.tsx  # Passenger form -> creates booking -> payment step
 │   │   └── SearchFlights.tsx
-│   ├── Globe/              # 3D globe & visualization
+│   ├── Globe/                     # 3D globe & visualization (Three.js)
 │   │   ├── Globe.tsx
 │   │   ├── GlobeWrapper.tsx
 │   │   └── SpaceCanvas.tsx
-│   ├── Loading/            # Loading states
+│   ├── Loading/
 │   │   └── SearchingForFlights.tsx
-│   ├── providers/          # Context providers
-│   │   └── FlightProvider.tsx
-│   └── ui/                 # Reusable UI components (shadcn/ui)
-│       ├── button.tsx
-│       ├── calendar.tsx
-│       ├── card.tsx
-│       ├── form.tsx
-│       ├── input.tsx
-│       ├── label.tsx
-│       ├── popover.tsx
-│       └── select.tsx
-├── schemas/                # Zod validation schemas
+│   ├── providers/
+│   │   └── FlightProvider.tsx     # Flight/booking state (React Context + localStorage)
+│   └── ui/                        # shadcn/ui components
+├── schemas/                       # Zod validation schemas
 │   ├── FlightBookingSchema.ts
 │   └── PersonalDetailsSchema.ts
-├── assets/                 # Images, animations, data
-│   ├── quencer_logo.png
-│   ├── react.svg
-│   ├── wmap.json           # World map GeoJSON
-│   └── wmap.lottie         # Lottie animations
 ├── lib/
-│   └── utils.ts            # Utility functions (cn() for Tailwind merging)
-├── App.tsx                 # Main app component
-├── main.tsx                # React DOM render entry
-├── index.css               # Global styles
-└── vite-env.d.ts          # Vite environment types
+│   ├── api.ts                     # getApiBaseUrl() - resolves dev vs. prod API URL
+│   ├── stripe.ts                  # loadStripe() singleton
+│   └── utils.ts                   # cn() for Tailwind class merging
+├── assets/                        # Images, animations, data
+├── App.tsx
+├── main.tsx
+├── index.css
+└── vite-env.d.ts
 
 public/
 ├── favicon.ico
 └── images/
-    ├── quencer_logo.webp
-    └── textures/
-        └── earth.jpg       # Earth texture for 3D globe
 
-Configuration Files:
-├── vite.config.ts          # Vite build configuration
-├── tsconfig.json           # TypeScript configuration
-├── tsconfig.app.json       # TypeScript app config
-├── tsconfig.node.json      # TypeScript Node config
-├── tailwind.config.js      # Tailwind CSS configuration
-├── components.json         # shadcn/ui configuration
-├── eslint.config.js        # ESLint rules
-└── package.json            # Dependencies & scripts
+Configuration Files: vite.config.ts, tsconfig*.json, components.json, eslint.config.js
 ```
 
 ---
@@ -142,43 +144,31 @@ Configuration Files:
 
 ### `FlightProvider.tsx`
 
-Global state management using React Context for flight booking data. Manages:
-
-- Selected flights (outbound/return)
-- Passenger information
-- Booking status
+Global state (React Context, mirrored to `localStorage`) for the booking flow: selected flights, passenger info, and booking/payment status (`bookingReference`, `clientSecret`, `paymentStatus`).
 
 ### `SearchFlights.tsx`
 
-Search form with date range picker and airport selection. Uses:
+Search form (trip type, origin/destination, dates, passengers, cabin class) using React Hook Form + Zod, posting to `POST /api/flights`.
 
-- React Hook Form for state management
-- Zod schema for validation
-- shadcn/ui form components
+### `availableFlights.tsx` / `flights.tsx`
 
-### `availableFlights.tsx / flights.tsx`
+Display AI-generated search results and let the passenger pick outbound/return flights. Each flight object includes an HMAC signature (`offerId`/`issuedAt`/`signature`) from the backend, which is passed through unmodified when booking.
 
-Display search results with flight details, pricing, and selection UI.
+### `Globe.tsx` / `SpaceCanvas.tsx`
 
-### `Globe.tsx / SpaceCanvas.tsx`
-
-Interactive 3D globe using Three.js:
-
-- Renders Earth with textures
-- Shows flight routes
-- Responds to mouse interaction
+Interactive 3D globe (Three.js) shown behind the search form.
 
 ### `PersonalDetailsForm.tsx`
 
-Collects passenger information with validation:
+Collects passenger details, then calls `POST /api/bookings` to create the booking and get a Stripe `clientSecret` - it does **not** call a payment/email endpoint directly.
 
-- Title, first/last name
-- Email, phone number
-- Country selection
+### `PaymentStep.tsx`
+
+Mounts Stripe's `<Elements>`/`<PaymentElement>` with the `clientSecret` from `PersonalDetailsForm`, confirms the payment, then polls `GET /api/bookings/:reference` until the backend webhook has confirmed the booking (payment success ≠ booking confirmed - the webhook is the source of truth).
 
 ### `FinalizeBooking.tsx`
 
-Final booking review and confirmation, triggers PDF generation and email on backend.
+Renders the flight review + `PersonalDetailsForm` (which internally switches to `PaymentStep`, then a success modal, as the booking progresses).
 
 ---
 
@@ -186,115 +176,66 @@ Final booking review and confirmation, triggers PDF generation and email on back
 
 ### Base URL
 
-Frontend connects to backend at `VITE_API_BASE_URL` (from `.env`).
+Resolved by `src/lib/api.ts#getApiBaseUrl()`: `VITE_API_URL_LOCAL` during `npm run dev`, `VITE_API_URL` in a production build.
 
 ### Endpoints Used
 
-**Search Flights:**
+**Search flights:**
 
 ```javascript
 POST /api/flights
 {
+  tripType: "roundTrip" | "oneWay" | "multiCity",
   origin: string,
   destination: string,
-  departDate: string,    // YYYY-MM-DD
-  returnDate: string
+  departDate: string,
+  returnDate?: string,
+  passengers: number,
+  cabinClass: "economy" | "premiumEconomy" | "business" | "first"
 }
+// -> { flights: { outboundFlights: [...], returnFlights: [...] } }
+// each flight is HMAC-signed by the backend
 ```
 
-**Book Flight:**
+**Create a booking (starts payment):**
 
 ```javascript
-POST /api/book
+POST /api/bookings
 {
-  passenger: { /* details */ },
-  outboundFlight: { /* flight object */ },
-  returnFlight: { /* flight object */ },
+  passenger: { title, firstName, lastName, email, country, phoneNumber },
+  outboundFlight: { /* signed flight offer, unmodified from /api/flights */ },
+  returnFlight: { /* signed flight offer, unmodified from /api/flights */ },
   bookingDate: string,
   bookingTime: string,
-  totalPrice: string
 }
+// -> { data: { bookingReference, clientSecret, amountTotal, currency } }
 ```
 
----
+**Poll booking status (after Stripe payment confirms):**
 
-## 📦 Environment Variables
-
-Create `.env.local` in the `client/` directory:
-
-```env
-VITE_API_BASE_URL=http://localhost:3000
+```javascript
+GET /api/bookings/:reference
+// -> { data: { status: "PENDING_PAYMENT" | "CONFIRMED" | "FAILED", ticketNumber, seatNumberOutbound, seatNumberReturn, ... } }
 ```
 
-For production (Vercel):
-
-```env
-VITE_API_BASE_URL=https://airline-app-i8q8.onrender.com
-```
+See [server/README.md](../server/README.md) for full request/response shapes and the Stripe webhook that actually confirms bookings.
 
 ---
 
 ## 🎨 Styling Guide
 
-### Tailwind CSS
+### Tailwind CSS v4
 
-All styling uses utility classes. Custom configurations in `tailwind.config.js`:
-
-- Custom color palette
-- Extended spacing
-- Custom animations
+Utility-first styling; Vite plugin config lives in `vite.config.ts` (via `@tailwindcss/vite`), theme tokens in `src/index.css`.
 
 ### shadcn/ui Components
 
-Pre-built, accessible components with Tailwind styling:
-
-- Buttons, cards, forms
-- Date pickers, select menus
-- Dialogs, modals
-
-### Adding New Components
+Pre-built, accessible components (buttons, cards, forms, date pickers, selects) configured via `components.json`.
 
 ```bash
-# Install new shadcn/ui component
-npx shadcn-ui@latest add [component-name]
+# Install a new shadcn/ui component
+npx shadcn@latest add [component-name]
 ```
-
----
-
-## 🔧 Development Workflow
-
-### Adding a New Feature
-
-1. **Create Component**
-
-```bash
-touch src/components/MyComponent.tsx
-```
-
-2. **Define Schema** (if form)
-
-```bash
-touch src/schemas/MySchema.ts
-# Add Zod schema validation
-```
-
-3. **Add to App Flow**
-   Import and use in `App.tsx` or context provider.
-
-4. **Style with Tailwind**
-   Use utility classes and shadcn/ui components.
-
-5. **Test Locally**
-
-```bash
-npm run dev
-```
-
-### TypeScript Best Practices
-
-- Define component prop types explicitly
-- Use `interface` for React component props
-- Import types from `./types` if shared
 
 ---
 
@@ -310,48 +251,26 @@ npm run preview
 ### Vercel Deployment
 
 1. Push code to GitHub
-2. Connect repo at [vercel.com](https://vercel.com)
-3. Set build command: `npm run build`
-4. Set output directory: `dist`
-5. Add environment variable: `VITE_API_BASE_URL=https://airline-app-i8q8.onrender.com`
-6. Deploy!
+2. Connect repo at [vercel.com](https://vercel.com), root directory `client`
+3. Build command: `npm run build`, output directory: `dist`
+4. Environment variables: `VITE_API_URL` (your deployed backend + `/api`), `VITE_STRIPE_PUBLISHABLE_KEY`
+5. Deploy - automatic deployments trigger on every push to `main`
 
-**Automatic deployments** trigger on every push to `main`.
-
----
-
-## 📊 Performance Tips
-
-### Code Splitting
-
-- Lazy load components with `React.lazy()` for routes
-- Dynamic imports for large libraries
-
-### Bundle Analysis
-
-```bash
-npm run build -- --analyze
-```
-
-### Lighthouse Checks
-
-Run locally in Chrome DevTools or via:
-
-```bash
-npm run build && npm run preview
-```
+**Current:** https://airline-app-gamma.vercel.app
 
 ---
 
 ## 🐛 Common Issues
 
-| Issue                             | Solution                                            |
-| --------------------------------- | --------------------------------------------------- |
-| **CORS error**                    | Backend `ALLOWED_ORIGINS` must include frontend URL |
-| **API not responding**            | Check `VITE_API_BASE_URL` matches backend           |
-| **Tailwind classes not applying** | Clear cache: `rm -rf .vite && npm run dev`          |
-| **TypeScript errors**             | Run `npm run build` to catch all issues             |
-| **Three.js not rendering**        | Check `public/images/textures/earth.jpg` exists     |
+| Issue                              | Solution                                                          |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| **CORS error**                     | Backend's `ALLOWED_ORIGINS` must include this app's exact origin  |
+| **API not responding**             | Check `VITE_API_URL`/`VITE_API_URL_LOCAL` matches the backend URL (must include `/api`) |
+| **Payment step never appears**     | Booking creation (`POST /api/bookings`) likely failed - check the error text under the passenger form, and the backend logs |
+| **Stripe Payment Element errors**  | Verify `VITE_STRIPE_PUBLISHABLE_KEY` is set and matches the same Stripe account/mode as the backend's `STRIPE_SECRET_KEY` |
+| **Tailwind classes not applying**  | Clear cache: `rm -rf .vite && npm run dev`                        |
+| **TypeScript errors**              | Run `npx tsc -b` to see all type errors                            |
+| **Three.js globe not rendering**   | Check `public/images/textures/earth.jpg` exists                    |
 
 ---
 
@@ -362,17 +281,9 @@ npm run build && npm run preview
 - [Tailwind CSS Docs](https://tailwindcss.com/)
 - [shadcn/ui Components](https://ui.shadcn.com/)
 - [Zod Validation](https://zod.dev/)
+- [Stripe.js / React Stripe Docs](https://stripe.com/docs/stripe-js/react)
 - [Three.js Documentation](https://threejs.org/docs/)
 
 ---
 
-## 🤝 Contributing
-
-1. Create feature branch: `git checkout -b feature/new-component`
-2. Commit: `git commit -am 'Add new component'`
-3. Push: `git push origin feature/new-component`
-4. Open Pull Request
-
----
-
-**Last Updated:** November 25, 2025
+**Questions or Issues?** Open an issue on GitHub or check the main [README.md](../README.md)
