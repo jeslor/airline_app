@@ -129,19 +129,20 @@ const TicketDetailsTemplate = ({
   seatNumberOutbound,
   seatNumberReturn,
   qrCodeDataUri,
+  logoDataUri,
 }) => `
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>${AIRLINE_BRAND.name} | e-Ticket Receipt</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
-      rel="stylesheet"
-    />
     <style>
       body {
-        font-family: "Inter", sans-serif;
+        /* No external font - this HTML is rendered by Puppeteer with
+           waitUntil: "networkidle0", which would hang (and can time out)
+           waiting on any remote font/image request. A system font stack
+           keeps PDF generation fully self-contained. */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
         font-size: 14px;
         margin: 0;
         padding: 20px;
@@ -583,12 +584,11 @@ const TicketDetailsTemplate = ({
   <body>
     <div class="container">
       <div class="header">
-        <img
-          style="height: 50px; width: auto"
-          src="${AIRLINE_BRAND.logoUrl}"
-          alt="${AIRLINE_BRAND.name} Logo"
-          class="logo"
-        />
+        ${
+          logoDataUri
+            ? `<img style="height: 50px; width: auto" src="${logoDataUri}" alt="${AIRLINE_BRAND.name} Logo" class="logo" />`
+            : `<strong style="font-size: 20px;">${AIRLINE_BRAND.name}</strong>`
+        }
         <h1>e-Ticket Receipt</h1>
       </div>
 

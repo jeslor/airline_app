@@ -15,15 +15,43 @@ import {
 // real passengers.
 const DEFAULT_FROM_EMAIL = "onboarding@resend.dev";
 
+// The PDF is rendered by Puppeteer with `waitUntil: "networkidle0"`, which
+// blocks until ALL network activity in the page settles - including any
+// remote <img>/font URL. A slow or unreachable external resource can hang
+// that for the full navigation timeout and fail ticket delivery entirely.
+// Fetching the logo once and embedding it as a data URI removes that
+// dependency from the render path. Cached in memory since it never changes;
+// if the fetch itself fails, the ticket still generates, just without a
+// logo - a missing decorative image should never block a paid customer
+// from getting their ticket.
+let logoDataUriPromise;
+async function getLogoDataUri() {
+  if (!logoDataUriPromise) {
+    logoDataUriPromise = fetch(AIRLINE_BRAND.logoUrl)
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Logo fetch failed: ${response.status}`);
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const contentType = response.headers.get("content-type") || "image/png";
+        return `data:${contentType};base64,${buffer.toString("base64")}`;
+      })
+      .catch((error) => {
+        console.error("Could not fetch airline logo for ticket PDF:", error);
+        logoDataUriPromise = null; // allow retrying on the next ticket
+        return null;
+      });
+  }
+  return logoDataUriPromise;
+}
+
 // `booking` is a persisted Prisma Booking record — ticketNumber and the two
 // seat numbers must already be set on it (generated once, at confirmation
 // time) so the PDF, email, and any later lookup always agree.
 async function buildTicketPdf(booking) {
   const totalPrice = booking.amountTotal / 100;
-  const qrCodeDataUri = await QRCode.toDataURL(booking.bookingReference, {
-    margin: 1,
-    width: 200,
-  });
+  const [qrCodeDataUri, logoDataUri] = await Promise.all([
+    QRCode.toDataURL(booking.bookingReference, { margin: 1, width: 200 }),
+    getLogoDataUri(),
+  ]);
 
   const html = TicketDetailsTemplate({
     passenger: booking.passenger,
@@ -37,6 +65,7 @@ async function buildTicketPdf(booking) {
     seatNumberOutbound: booking.seatNumberOutbound,
     seatNumberReturn: booking.seatNumberReturn,
     qrCodeDataUri,
+    logoDataUri,
   });
 
   return generatePDF(html);
@@ -226,7 +255,10 @@ export async function deliverTicket(booking) {
     attachments: [
       {
         filename: `ticket-${booking.bookingReference}.pdf`,
-        content: pdfBuffer,
+        // Resend's API requires attachment content as a base64 string, not
+        // a raw Buffer - passing the Buffer directly fails with
+        // "Attachment content must be a base64-encoded string."
+        content: pdfBuffer.toString("base64"),
       },
     ],
   });
