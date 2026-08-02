@@ -40,6 +40,8 @@ Return ONLY valid JSON with NO text before or after. Use this EXACT structure:
           "city": "Chicago",
           "airportCode": "ORD",
           "flightNumber": "QF5678",
+          "arrivalTime": "09:45 AM",
+          "departureTime": "11:15 AM",
           "duration": "1h 30m"
         }
       ]
@@ -73,6 +75,8 @@ IMPORTANT RULES:
 - Times in 12-hour format with AM/PM
 - price must be a NUMBER (not string), between 200-2000
 - layovers is an array (empty [] if non-stop, or contains layover objects)
+- For each layover: "arrivalTime" is when that leg lands at the layover airport, "departureTime" is when the connecting flight departs from it - both in the same 12-hour AM/PM format, and departureTime must be later than arrivalTime by roughly the stated "duration"
+- The first leg's flight number is the flight's own "flightNumber"; each layover's "flightNumber" is the connecting flight operating the next leg
 - Include variety: some non-stop, some with 1-2 layovers
 - Use realistic aircraft types: Boeing 737, Boeing 777, Airbus A320, Airbus A350, etc.
 `;

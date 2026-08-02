@@ -11,18 +11,107 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 2,
   });
 
-const flightRow = (flight, seatNumber) => `
-  <tr>
-    <td>${flight.flightNumber} - CONFIRMED</td>
-    <td>${flight.departureDate}</td>
-    <td>${flight.departureCity} ${flight.departureTime}</td>
-    <td>${flight.arrivalDate}</td>
-    <td>${flight.arrivalCity} ${flight.arrivalTime}</td>
-    <td>${generateRandomTerminal()}</td>
-    <td>${generateCabinZone()}</td>
-    <td><strong>${seatNumber}</strong></td>
-  </tr>
-`;
+// Turns a flight (with 0+ layovers) into an ordered list of point-to-point
+// legs, each operated by its own flight number, so the ticket can show the
+// full routing instead of just the overall origin/destination.
+function buildSegments(flight) {
+  const layovers = Array.isArray(flight.layovers) ? flight.layovers : [];
+
+  const points = [
+    {
+      code: flight.departureAirportCode,
+      city: flight.departureCity,
+      date: flight.departureDate,
+      time: flight.departureTime,
+    },
+    ...layovers.flatMap((layover) => [
+      { code: layover.airportCode, city: layover.city, date: flight.departureDate, time: layover.arrivalTime },
+      { code: layover.airportCode, city: layover.city, date: flight.departureDate, time: layover.departureTime },
+    ]),
+    {
+      code: flight.arrivalAirportCode,
+      city: flight.arrivalCity,
+      date: flight.arrivalDate,
+      time: flight.arrivalTime,
+    },
+  ];
+
+  const flightNumbers = [flight.flightNumber, ...layovers.map((l) => l.flightNumber)];
+
+  return flightNumbers.map((flightNumber, i) => ({
+    flightNumber: flightNumber || flight.flightNumber,
+    from: points[i * 2],
+    to: points[i * 2 + 1],
+  }));
+}
+
+function renderItinerary(flight, seatNumber, label) {
+  const layovers = Array.isArray(flight.layovers) ? flight.layovers : [];
+  const segments = buildSegments(flight);
+  const stopsLabel =
+    layovers.length === 0
+      ? "Non-stop"
+      : `${layovers.length} Stop${layovers.length > 1 ? "s" : ""}`;
+
+  const routeCodes = [
+    flight.departureAirportCode,
+    ...layovers.map((l) => l.airportCode),
+    flight.arrivalAirportCode,
+  ].filter(Boolean);
+
+  const segmentsHtml = segments
+    .map((segment, i) => {
+      const segmentHtml = `
+        <div class="segment">
+          <div class="segment-flight-no">${segment.flightNumber} &nbsp;·&nbsp; ${flight.aircraftType || "N/A"}</div>
+          <div class="segment-timeline">
+            <div class="segment-point">
+              <div class="segment-time">${segment.from?.time || "-"}</div>
+              <div class="segment-code">${segment.from?.code || "-"}</div>
+              <div class="segment-city">${segment.from?.city || ""}</div>
+              <div class="segment-date">${segment.from?.date || ""}</div>
+            </div>
+            <div class="segment-line"><span></span></div>
+            <div class="segment-point segment-point-end">
+              <div class="segment-time">${segment.to?.time || "-"}</div>
+              <div class="segment-code">${segment.to?.code || "-"}</div>
+              <div class="segment-city">${segment.to?.city || ""}</div>
+              <div class="segment-date">${segment.to?.date || ""}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const layover = layovers[i];
+      const layoverDetail = layover?.duration ? ` — ${layover.duration} layover` : "";
+      const layoverHtml = layover
+        ? `<div class="layover-note">✈ Change planes in ${layover.city} (${layover.airportCode})${layoverDetail}</div>`
+        : "";
+
+      return segmentHtml + layoverHtml;
+    })
+    .join("");
+
+  return `
+    <div class="itinerary">
+      <div class="itinerary-header">
+        <div>
+          <span class="itinerary-label">${label}</span>
+          <span class="confirmed-badge">CONFIRMED</span>
+        </div>
+        <div class="stops-badge">${stopsLabel}</div>
+      </div>
+      <div class="route-summary">${routeCodes.join(" &nbsp;✈&nbsp; ")} &nbsp;•&nbsp; Total travel time: ${flight.flightDuration || "N/A"}</div>
+      ${segmentsHtml}
+      <div class="itinerary-footer">
+        <div><strong>Aircraft:</strong> ${flight.aircraftType || "N/A"}</div>
+        <div><strong>Terminal:</strong> ${generateRandomTerminal()}</div>
+        <div><strong>Cabin:</strong> ${generateCabinZone()}</div>
+        <div><strong>Seat:</strong> ${seatNumber}</div>
+      </div>
+    </div>
+  `;
+}
 
 // ticketNumber and the seat numbers must be generated once (at payment
 // confirmation) and persisted on the Booking, then passed in here — never
@@ -205,8 +294,154 @@ const TicketDetailsTemplate = ({
         border-bottom: none;
       }
 
-      .flight-details-table td {
+      /* Itinerary (route/segments/layovers) */
+      .itinerary {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+        background: #fff;
+      }
+
+      .itinerary:last-child {
+        margin-bottom: 0;
+      }
+
+      .itinerary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .itinerary-label {
+        font-size: 15px;
+        font-weight: 700;
+        color: #000;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .confirmed-badge {
+        margin-left: 10px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #9a0507;
+        letter-spacing: 0.5px;
+      }
+
+      .stops-badge {
+        font-size: 11px;
+        font-weight: 600;
+        color: #555;
+        background: #f0f0f0;
+        padding: 3px 10px;
+        border-radius: 12px;
+        white-space: nowrap;
+      }
+
+      .route-summary {
+        font-size: 12.5px;
+        color: #666;
+        margin-bottom: 16px;
         font-weight: 500;
+        letter-spacing: 0.2px;
+      }
+
+      .segment {
+        margin-bottom: 4px;
+      }
+
+      .segment-flight-no {
+        font-size: 11px;
+        color: #888;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .segment-timeline {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .segment-point {
+        flex: 0 0 auto;
+        min-width: 100px;
+      }
+
+      .segment-point-end {
+        text-align: right;
+      }
+
+      .segment-time {
+        font-size: 16px;
+        font-weight: 700;
+        color: #000;
+      }
+
+      .segment-code {
+        font-size: 13px;
+        font-weight: 700;
+        color: #9a0507;
+      }
+
+      .segment-city,
+      .segment-date {
+        font-size: 11px;
+        color: #777;
+      }
+
+      .segment-line {
+        flex: 1;
+        height: 1px;
+        background-image: repeating-linear-gradient(
+          to right,
+          #bbb 0,
+          #bbb 4px,
+          transparent 4px,
+          transparent 9px
+        );
+        position: relative;
+      }
+
+      .segment-line span {
+        position: absolute;
+        right: -1px;
+        top: -4px;
+        width: 7px;
+        height: 7px;
+        border-top: 2px solid #9a0507;
+        border-right: 2px solid #9a0507;
+        transform: rotate(45deg);
+      }
+
+      .layover-note {
+        font-size: 12px;
+        color: #665500;
+        background-color: #fffacd;
+        border-left: 4px solid #ccaa00;
+        padding: 8px 12px;
+        border-radius: 4px;
+        margin: 12px 0;
+      }
+
+      .itinerary-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px dashed #eee;
+        font-size: 12px;
+        color: #444;
+      }
+
+      .fare-notes {
+        font-size: 12px;
+        color: #555;
+        margin-top: 10px;
       }
 
       .total-price {
@@ -216,16 +451,6 @@ const TicketDetailsTemplate = ({
         text-align: right;
         padding-right: 10px;
         padding-top: 15px;
-      }
-
-      .note {
-        font-size: 13px;
-        margin-top: 20px;
-        padding: 10px 15px;
-        background-color: #fffacd;
-        border-left: 4px solid #ccaa00;
-        color: #665500;
-        border-radius: 4px;
       }
 
       .terms {
@@ -332,7 +557,7 @@ const TicketDetailsTemplate = ({
           background-color: #f0f0f0 !important;
         }
 
-        .note {
+        .layover-note {
           background-color: #fff8e1 !important;
           border-left-color: #d4a700 !important;
           color: #5a4b00 !important;
@@ -414,37 +639,13 @@ const TicketDetailsTemplate = ({
       <!-- Flight Details -->
       <div class="section">
         <div class="section-title">Flight Details</div>
-        <table class="flight-details-table">
-          <tr>
-            <th>Outbound Flight</th>
-            <th>Departure Date</th>
-            <th>Departure Time</th>
-            <th>Arrival Date</th>
-            <th>Arrival Time</th>
-            <th>Terminal</th>
-            <th>Boarding Zone</th>
-            <th>Seat</th>
-          </tr>
-          ${flightRow(outboundFlight, seatNumberOutbound)}
-          <tr>
-            <th>Return Flight</th>
-            <th>Departure Date</th>
-            <th>Departure Time</th>
-            <th>Arrival Date</th>
-            <th>Arrival Time</th>
-            <th>Terminal</th>
-            <th>Boarding Zone</th>
-            <th>Seat</th>
-          </tr>
-          ${flightRow(returnFlight, seatNumberReturn)}
-          <tr>
-            <td colspan="8">
-              <strong>Fare Basis:</strong> YCUS0 — Economy, Non-Refundable &nbsp;•&nbsp;
-              <strong>Baggage Allowance:</strong> 25KG x 2 per passenger &nbsp;•&nbsp;
-              <strong>Check-in:</strong> Opens 24h before departure, closes 45 min prior
-            </td>
-          </tr>
-        </table>
+        ${renderItinerary(outboundFlight, seatNumberOutbound, "Outbound Flight")}
+        ${renderItinerary(returnFlight, seatNumberReturn, "Return Flight")}
+        <p class="fare-notes">
+          <strong>Fare Basis:</strong> YCUS0 — Economy, Non-Refundable &nbsp;•&nbsp;
+          <strong>Baggage Allowance:</strong> 25KG x 2 per passenger &nbsp;•&nbsp;
+          <strong>Check-in:</strong> Opens 24h before departure, closes 45 min prior
+        </p>
       </div>
 
       <!-- Fare Summary -->

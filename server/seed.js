@@ -20,7 +20,7 @@ function getRandomElement(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-function buildFlight({ origin, destination, originCode, destCode, date, price }) {
+function buildFlight({ origin, destination, originCode, destCode, date, price, layovers = [] }) {
   return signOffer({
     airline: "Quencer Airlines",
     flightNumber: `QF${Math.floor(1000 + Math.random() * 9000)}`,
@@ -35,12 +35,31 @@ function buildFlight({ origin, destination, originCode, destCode, date, price })
     flightDuration: "5h 30m",
     aircraftType: "Boeing 737-800",
     price,
-    layovers: [],
+    layovers,
   });
 }
 
+// One route keeps a layover so `npm run seed` demonstrates the multi-segment
+// itinerary/route rendering on the ticket without needing a live AI search.
+const oneStopLayover = [
+  {
+    city: "Chicago",
+    airportCode: "ORD",
+    flightNumber: "QF5678",
+    arrivalTime: "10:15 AM",
+    departureTime: "11:45 AM",
+    duration: "1h 30m",
+  },
+];
+
 const sampleRoutes = [
-  { origin: "New York", destination: "Los Angeles", originCode: "JFK", destCode: "LAX" },
+  {
+    origin: "New York",
+    destination: "Los Angeles",
+    originCode: "JFK",
+    destCode: "LAX",
+    outboundLayovers: oneStopLayover,
+  },
   { origin: "London", destination: "Dubai", originCode: "LHR", destCode: "DXB" },
   { origin: "Paris", destination: "Tokyo", originCode: "CDG", destCode: "NRT" },
   { origin: "Sydney", destination: "Singapore", originCode: "SYD", destCode: "SIN" },
@@ -69,6 +88,7 @@ async function generateSeedData() {
       destCode: route.destCode,
       date: "January 15, 2026",
       price,
+      layovers: route.outboundLayovers || [],
     });
     const returnFlight = buildFlight({
       origin: route.destination,

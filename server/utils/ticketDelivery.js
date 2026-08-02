@@ -43,7 +43,30 @@ async function buildTicketPdf(booking) {
 }
 
 function flightSummaryHtml(flight, seatNumber) {
-  const isNonStop = !flight.layovers || flight.layovers.length === 0;
+  const layovers = Array.isArray(flight.layovers) ? flight.layovers : [];
+  const isNonStop = layovers.length === 0;
+  const routeCodes = [
+    flight.departureAirportCode,
+    ...layovers.map((l) => l.airportCode),
+    flight.arrivalAirportCode,
+  ].filter(Boolean);
+
+  const layoverRows = layovers
+    .map((layover) => {
+      const times =
+        layover.arrivalTime && layover.departureTime
+          ? ` — arrive ${layover.arrivalTime}, depart ${layover.departureTime}`
+          : "";
+      const duration = layover.duration ? ` (${layover.duration} layover)` : "";
+      return `
+      <tr>
+        <td colspan="2" style="padding: 8px 0; color: #9a0507; font-size: 13px;">
+          ✈ Change planes in ${layover.city} (${layover.airportCode})${times}${duration}
+        </td>
+      </tr>`;
+    })
+    .join("");
+
   return `
     <div style="margin-bottom: 20px; border-bottom: 3px solid #e4e4e4; border-top: 3px solid #e4e4e4;">
       <h3 style="margin-bottom: 0;">
@@ -53,14 +76,10 @@ function flightSummaryHtml(flight, seatNumber) {
       <p style="margin-top: 5px;">
         ${flight.departureDate} – ${flight.arrivalDate}
         &nbsp; • &nbsp; ${flight.flightDuration} &nbsp; • &nbsp;
-        ${isNonStop ? "Non Stop" : "With Stops"}
-        &nbsp; • &nbsp; ${
-          !isNonStop
-            ? flight.layovers
-                .map((layover) => `${layover.city} (${layover.duration})`)
-                .join(", ")
-            : "N/A"
-        }
+        ${isNonStop ? "Non Stop" : `${layovers.length} Stop${layovers.length > 1 ? "s" : ""}`}
+      </p>
+      <p style="margin-top: 5px; color: #555; font-size: 13px;">
+        Route: ${routeCodes.join(" → ")}
       </p>
     </div>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
@@ -87,6 +106,7 @@ function flightSummaryHtml(flight, seatNumber) {
         <td>${generateRandomTerminal()}</td>
         <td style="text-align: right;">${generateRandomTerminal()}</td>
       </tr>
+      ${layoverRows}
     </table>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
       <tr>
