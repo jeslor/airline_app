@@ -52,14 +52,14 @@ app.get(
   })
 );
 
-// AI flight generation and booking/payment creation are the two most
-// expensive/abusable routes (Gemini quota, Stripe/email spam), so they get
-// their own rate limits.
+// AI flight generation is the most expensive/abusable route (Gemini quota),
+// so it gets its own rate limit here. Booking creation vs. booking lookup
+// need very different limits from each other, so those are rate-limited
+// per-route inside bookings.routes.js instead of with one blanket limiter.
 const flightsLimiter = rateLimit({ windowMs: 60_000, limit: 10 });
-const bookingsLimiter = rateLimit({ windowMs: 60_000, limit: 5 });
 
 app.use("/api/flights", flightsLimiter, flightsRoutes);
-app.use("/api/bookings", bookingsLimiter, bookingsRoutes);
+app.use("/api/bookings", bookingsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });
