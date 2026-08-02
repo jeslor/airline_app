@@ -225,7 +225,7 @@ Stripe webhook endpoint (raw body, signature-verified via `STRIPE_WEBHOOK_SECRET
 
 1. Go to [Render.com](https://render.com) → New Web Service → connect this repo
 2. **Root Directory**: `server`
-3. **Build Command**: `npm install` (the `postinstall` hook runs `prisma generate` automatically - no separate Prisma or Playwright install step needed)
+3. **Build Command**: `npm install && npx puppeteer browsers install chrome` - `npm install` alone runs `prisma generate` automatically via its `postinstall` hook, but npm can skip re-running a dependency's own postinstall script (Puppeteer's Chrome download) if it decides the dependency tree hasn't changed - e.g. across Render's cached builds. The explicit `npx puppeteer browsers install chrome` step guarantees Chrome is actually present every build, using the cache path configured in `.puppeteerrc.cjs`.
 4. **Start Command**: `npm start`
 5. Environment variables (Render dashboard → Environment): all of the vars listed above, plus `NODE_ENV=production`
 6. Register a webhook endpoint in the Stripe dashboard pointing at `https://<your-render-url>/api/webhooks/stripe`, and set its signing secret as `STRIPE_WEBHOOK_SECRET`

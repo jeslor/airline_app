@@ -25,8 +25,7 @@ model Booking {
   status                String   @default("PENDING_PAYMENT") // PENDING_PAYMENT | CONFIRMED | FAILED
 
   passenger             Json
-  outboundFlight        Json
-  returnFlight          Json
+  flights               Json // ordered array of signed flight offers (1 = one-way, 2 = round trip, 3+ = multi-city)
 
   currency              String   @default("usd")
   amountTotal           Int // authoritative charge amount, in cents
@@ -34,8 +33,7 @@ model Booking {
   stripePaymentIntentId String?  @unique
 
   ticketNumber          String?
-  seatNumberOutbound    String?
-  seatNumberReturn      String?
+  seatNumbers           Json? // array of seat strings, parallel to `flights`
 
   bookingDate           String
   bookingTime           String

@@ -54,4 +54,28 @@ describe("offerSigning", () => {
     expect(verifyOffer({})).toBe(false);
     expect(verifyOffer({ ...baseOffer })).toBe(false); // never signed
   });
+
+  it("verifies every leg of a multi-city (N-leg) booking", () => {
+    const legs = [
+      signOffer({ ...baseOffer, flightNumber: "QF1000", price: 300 }),
+      signOffer({ ...baseOffer, flightNumber: "QF2000", price: 400 }),
+      signOffer({ ...baseOffer, flightNumber: "QF3000", price: 500 }),
+    ];
+    expect(legs.every(verifyOffer)).toBe(true);
+
+    // The authoritative charge (bookings.controller.js#createBooking) sums
+    // every leg's signed price - never a client-submitted total.
+    const amountTotal = Math.round(
+      legs.reduce((sum, leg) => sum + leg.price, 0) * 100
+    );
+    expect(amountTotal).toBe(120000); // (300 + 400 + 500) * 100
+  });
+
+  it("rejects the whole booking if any single leg is tampered", () => {
+    const legs = [
+      signOffer({ ...baseOffer, flightNumber: "QF1000", price: 300 }),
+      { ...signOffer({ ...baseOffer, flightNumber: "QF2000", price: 400 }), price: 1 },
+    ];
+    expect(legs.every(verifyOffer)).toBe(false);
+  });
 });

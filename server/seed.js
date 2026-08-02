@@ -39,7 +39,7 @@ function buildFlight({ origin, destination, originCode, destCode, date, price, l
   });
 }
 
-// One route keeps a layover so `npm run seed` demonstrates the multi-segment
+// One leg keeps a layover so `npm run seed` demonstrates the multi-segment
 // itinerary/route rendering on the ticket without needing a live AI search.
 const oneStopLayover = [
   {
@@ -52,59 +52,75 @@ const oneStopLayover = [
   },
 ];
 
-const sampleRoutes = [
-  {
-    origin: "New York",
-    destination: "Los Angeles",
-    originCode: "JFK",
-    destCode: "LAX",
-    outboundLayovers: oneStopLayover,
-  },
-  { origin: "London", destination: "Dubai", originCode: "LHR", destCode: "DXB" },
-  { origin: "Paris", destination: "Tokyo", originCode: "CDG", destCode: "NRT" },
-  { origin: "Sydney", destination: "Singapore", originCode: "SYD", destCode: "SIN" },
-  { origin: "Toronto", destination: "Madrid", originCode: "YYZ", destCode: "MAD" },
-];
+function randomPrice() {
+  return 200 + Math.floor(Math.random() * 800);
+}
 
-const statuses = ["CONFIRMED", "CONFIRMED", "CONFIRMED", "PENDING_PAYMENT", "FAILED"];
+// Each entry's `legs` is an ordered list of point-to-point hops - 1 leg
+// demonstrates one-way, 2 legs (reversing origin/destination) demonstrates
+// round trip, 3+ legs demonstrates multi-city, matching the three trip
+// types the booking flow actually supports.
+const sampleBookings = [
+  {
+    status: "CONFIRMED",
+    legs: [
+      { origin: "New York", destination: "Los Angeles", originCode: "JFK", destCode: "LAX", layovers: oneStopLayover },
+      { origin: "Los Angeles", destination: "New York", originCode: "LAX", destCode: "JFK" },
+    ],
+  },
+  {
+    status: "CONFIRMED",
+    legs: [{ origin: "London", destination: "Dubai", originCode: "LHR", destCode: "DXB" }],
+  },
+  {
+    status: "CONFIRMED",
+    legs: [
+      { origin: "Paris", destination: "Tokyo", originCode: "CDG", destCode: "NRT" },
+      { origin: "Tokyo", destination: "Sydney", originCode: "NRT", destCode: "SYD" },
+      { origin: "Sydney", destination: "Singapore", originCode: "SYD", destCode: "SIN" },
+    ],
+  },
+  {
+    status: "PENDING_PAYMENT",
+    legs: [
+      { origin: "Toronto", destination: "Madrid", originCode: "YYZ", destCode: "MAD" },
+      { origin: "Madrid", destination: "Toronto", originCode: "MAD", destCode: "YYZ" },
+    ],
+  },
+  {
+    status: "FAILED",
+    legs: [{ origin: "Cape Town", destination: "Nairobi", originCode: "CPT", destCode: "NBO" }],
+  },
+];
 
 async function generateSeedData() {
   console.log("🌱 Seeding demo bookings...");
 
   await prisma.booking.deleteMany();
 
-  for (let i = 0; i < sampleRoutes.length; i++) {
-    const route = sampleRoutes[i];
-    const status = statuses[i];
+  const dates = ["January 15, 2026", "January 18, 2026", "January 22, 2026", "January 25, 2026"];
+
+  for (const sample of sampleBookings) {
     const firstName = getRandomElement(firstNames);
     const lastName = getRandomElement(lastNames);
-    const price = 200 + Math.floor(Math.random() * 800);
-    const returnPrice = 200 + Math.floor(Math.random() * 800);
+    const isConfirmed = sample.status === "CONFIRMED";
 
-    const outboundFlight = buildFlight({
-      origin: route.origin,
-      destination: route.destination,
-      originCode: route.originCode,
-      destCode: route.destCode,
-      date: "January 15, 2026",
-      price,
-      layovers: route.outboundLayovers || [],
-    });
-    const returnFlight = buildFlight({
-      origin: route.destination,
-      destination: route.origin,
-      originCode: route.destCode,
-      destCode: route.originCode,
-      date: "January 22, 2026",
-      price: returnPrice,
-    });
-
-    const isConfirmed = status === "CONFIRMED";
+    const flights = sample.legs.map((leg, i) =>
+      buildFlight({
+        origin: leg.origin,
+        destination: leg.destination,
+        originCode: leg.originCode,
+        destCode: leg.destCode,
+        date: dates[i] || dates[dates.length - 1],
+        price: randomPrice(),
+        layovers: leg.layovers || [],
+      })
+    );
 
     await prisma.booking.create({
       data: {
         bookingReference: generateBookingReference(),
-        status,
+        status: sample.status,
         passenger: {
           title: getRandomElement(titles),
           firstName,
@@ -113,14 +129,14 @@ async function generateSeedData() {
           country: getRandomElement(countries),
           phoneNumber: "+1-555-0100",
         },
-        outboundFlight,
-        returnFlight,
+        flights,
         currency: "usd",
-        amountTotal: Math.round((price + returnPrice) * 100),
+        amountTotal: Math.round(
+          flights.reduce((sum, flight) => sum + flight.price, 0) * 100
+        ),
         stripePaymentIntentId: `pi_seed_${generateBookingReference().toLowerCase()}`,
         ticketNumber: isConfirmed ? generateTicketNumber("QA") : null,
-        seatNumberOutbound: isConfirmed ? generateSeatNumbers() : null,
-        seatNumberReturn: isConfirmed ? generateSeatNumbers() : null,
+        seatNumbers: isConfirmed ? flights.map(() => generateSeatNumbers()) : null,
         bookingDate: "2026-01-02",
         bookingTime: "14:30",
       },
@@ -128,7 +144,7 @@ async function generateSeedData() {
   }
 
   const totalBookings = await prisma.booking.count();
-  console.log(`✅ Seeded ${totalBookings} demo bookings.`);
+  console.log(`✅ Seeded ${totalBookings} demo bookings (one-way, round trip, and multi-city examples).`);
 }
 
 generateSeedData()

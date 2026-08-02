@@ -13,9 +13,12 @@ async function handlePaymentSucceeded(paymentIntent) {
   const bookingReference = paymentIntent.metadata?.bookingReference;
   if (!bookingReference) return;
 
+  const existing = await prisma.booking.findUnique({ where: { bookingReference } });
+  if (!existing) return;
+
   const ticketNumber = generateTicketNumber();
-  const seatNumberOutbound = generateSeatNumbers();
-  const seatNumberReturn = generateSeatNumbers();
+  // One seat per leg (1 = one-way, 2 = round trip, 3+ = multi-city).
+  const seatNumbers = existing.flights.map(() => generateSeatNumbers());
 
   // Atomic guard: only the delivery of this event that actually flips the
   // status away from CONFIRMED gets to send the ticket. MongoDB applies the
@@ -23,7 +26,7 @@ async function handlePaymentSucceeded(paymentIntent) {
   // both pass this check.
   const result = await prisma.booking.updateMany({
     where: { bookingReference, status: { not: "CONFIRMED" } },
-    data: { status: "CONFIRMED", ticketNumber, seatNumberOutbound, seatNumberReturn },
+    data: { status: "CONFIRMED", ticketNumber, seatNumbers },
   });
 
   if (result.count === 0) {

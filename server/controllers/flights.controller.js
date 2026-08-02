@@ -5,22 +5,13 @@ import { signOffer } from "../utils/offerSigning.js";
 import { flightSearchSchema } from "../schemas/flightSearch.schema.js";
 import AppError from "../utils/appError.js";
 
-const getFlights = asyncWrapper(async (req, res) => {
-  const parsed = flightSearchSchema.safeParse(req.body);
-  if (!parsed.success) {
-    throw new AppError(
-      `Invalid search request: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
-      400
-    );
-  }
-  const body = parsed.data;
-
-  const prompt = `
-You are a flight data generator. Generate realistic flight data from ${body.origin} to ${body.destination} on ${body.departDate} and return on ${body.returnDate}.
+function buildLegPrompt(leg) {
+  return `
+You are a flight data generator. Generate realistic flight data from ${leg.origin} to ${leg.destination} on ${leg.date}.
 
 Return ONLY valid JSON with NO text before or after. Use this EXACT structure:
 {
-  "outboundFlights": [
+  "flights": [
     {
       "airline": "Quencer Airlines",
       "flightNumber": "QF1234",
@@ -46,29 +37,11 @@ Return ONLY valid JSON with NO text before or after. Use this EXACT structure:
         }
       ]
     }
-  ],
-  "returnFlights": [
-    {
-      "airline": "Quencer Airlines",
-      "flightNumber": "QF4321",
-      "departureCity": "Los Angeles",
-      "arrivalCity": "New York",
-      "departureAirportCode": "LAX",
-      "arrivalAirportCode": "JFK",
-      "departureDate": "January 20, 2025",
-      "arrivalDate": "January 20, 2025",
-      "departureTime": "02:00 PM",
-      "arrivalTime": "10:30 PM",
-      "flightDuration": "5h 30m",
-      "aircraftType": "Airbus A320",
-      "price": 480,
-      "layovers": []
-    }
   ]
 }
 
 IMPORTANT RULES:
-- Generate at least 5 flight options for BOTH outboundFlights AND returnFlights
+- Generate at least 5 flight options
 - All airlines must be "Quencer Airlines"
 - Flight numbers format: QF#### (4 digits)
 - Dates in human-readable format: "Month Day, Year" (e.g., "January 15, 2025")
@@ -80,34 +53,49 @@ IMPORTANT RULES:
 - Include variety: some non-stop, some with 1-2 layovers
 - Use realistic aircraft types: Boeing 737, Boeing 777, Airbus A320, Airbus A350, etc.
 `;
+}
+
+async function generateLegFlights(model, leg) {
+  const result = await model.generateContent(buildLegPrompt(leg));
+  const text = result.response.text();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleanAIJsonResponse(text));
+  } catch (e) {
+    console.error("❌ Failed to parse JSON from Gemini for leg:", leg, e);
+    throw new AppError(
+      "Failed to generate flight data for one of the requested legs. Please try again.",
+      502
+    );
+  }
+
+  const flights = (parsed.flights || []).map(signOffer);
+  return { origin: leg.origin, destination: leg.destination, date: leg.date, flights };
+}
+
+const getFlights = asyncWrapper(async (req, res) => {
+  const parsed = flightSearchSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new AppError(
+      `Invalid search request: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
+      400
+    );
+  }
+  const { legs } = parsed.data;
 
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
   });
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
+  // One independent Gemini call per leg (rather than one large prompt
+  // asking for every leg at once) - simpler to validate/parse per leg,
+  // and runs concurrently instead of serially.
+  const legResults = await Promise.all(
+    legs.map((leg) => generateLegFlights(model, leg))
+  );
 
-  let flights = [];
-
-  try {
-    flights = cleanAIJsonResponse(text);
-    flights = JSON.parse(flights); // 🔥 Convert string to array
-  } catch (e) {
-    console.error("❌ Failed to parse JSON from Gemini:", e);
-    return res.status(500).json({
-      message: "Failed to parse flight data. Please try again.",
-      raw: text,
-    });
-  }
-
-  // Sign every offer so /api/bookings can later verify the passenger's
-  // chosen flights (and prices) actually came from this response.
-  flights.outboundFlights = (flights.outboundFlights || []).map(signOffer);
-  flights.returnFlights = (flights.returnFlights || []).map(signOffer);
-
-  res.status(200).json({ flights });
+  res.status(200).json({ legs: legResults });
 });
 
 export { getFlights };

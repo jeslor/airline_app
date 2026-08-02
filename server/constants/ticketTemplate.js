@@ -113,21 +113,34 @@ function renderItinerary(flight, seatNumber, label) {
   `;
 }
 
+// A 2-leg booking whose second leg is exactly the reverse of the first is a
+// round trip - label it Outbound/Return. Anything else (a single leg, or 3+
+// legs) is a one-way or multi-city itinerary - label each leg by number.
+function getLegLabel(flights, index) {
+  const isRoundTrip =
+    flights.length === 2 &&
+    flights[1].departureAirportCode === flights[0].arrivalAirportCode &&
+    flights[1].arrivalAirportCode === flights[0].departureAirportCode;
+
+  if (isRoundTrip) {
+    return index === 0 ? "Outbound Flight" : "Return Flight";
+  }
+  return `Flight ${index + 1}: ${flights[index].departureAirportCode} → ${flights[index].arrivalAirportCode}`;
+}
+
 // ticketNumber and the seat numbers must be generated once (at payment
 // confirmation) and persisted on the Booking, then passed in here — never
 // regenerated on each render, or the PDF/email/DB would disagree with each
 // other on the passenger's actual seat/ticket number.
 const TicketDetailsTemplate = ({
   passenger,
-  outboundFlight,
-  returnFlight,
+  flights,
   totalPrice,
   bookingReference,
   bookingDate,
   bookingTime,
   ticketNumber,
-  seatNumberOutbound,
-  seatNumberReturn,
+  seatNumbers,
   qrCodeDataUri,
   logoDataUri,
 }) => `
@@ -639,8 +652,11 @@ const TicketDetailsTemplate = ({
       <!-- Flight Details -->
       <div class="section">
         <div class="section-title">Flight Details</div>
-        ${renderItinerary(outboundFlight, seatNumberOutbound, "Outbound Flight")}
-        ${renderItinerary(returnFlight, seatNumberReturn, "Return Flight")}
+        ${flights
+          .map((flight, i) =>
+            renderItinerary(flight, seatNumbers?.[i] || "N/A", getLegLabel(flights, i))
+          )
+          .join("")}
         <p class="fare-notes">
           <strong>Fare Basis:</strong> YCUS0 — Economy, Non-Refundable &nbsp;•&nbsp;
           <strong>Baggage Allowance:</strong> 25KG x 2 per passenger &nbsp;•&nbsp;

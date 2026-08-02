@@ -31,8 +31,7 @@ const passengerSchema = z.object({
 
 export const createBookingSchema = z.object({
   passenger: passengerSchema,
-  outboundFlight: offerSchema,
-  returnFlight: offerSchema,
+  flights: z.array(offerSchema).min(1).max(6),
   bookingDate: z.string().min(1),
   bookingTime: z.string().min(1),
 });

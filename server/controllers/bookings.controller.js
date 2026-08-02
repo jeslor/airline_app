@@ -36,12 +36,11 @@ const createBooking = asyncWrapper(async (req, res) => {
     );
   }
 
-  const { passenger, outboundFlight, returnFlight, bookingDate, bookingTime } =
-    parsed.data;
+  const { passenger, flights, bookingDate, bookingTime } = parsed.data;
 
   // Never trust a client-submitted price - only charge for offers we signed
   // ourselves and that haven't expired.
-  if (!verifyOffer(outboundFlight) || !verifyOffer(returnFlight)) {
+  if (!flights.every(verifyOffer)) {
     throw new AppError(
       "One or more selected flights could not be verified. Please search again.",
       400
@@ -50,14 +49,13 @@ const createBooking = asyncWrapper(async (req, res) => {
 
   const currency = "usd";
   const amountTotal = Math.round(
-    (outboundFlight.price + returnFlight.price) * 100
+    flights.reduce((sum, flight) => sum + flight.price, 0) * 100
   );
 
   const booking = await createBookingWithUniqueReference({
     status: "PENDING_PAYMENT",
     passenger,
-    outboundFlight,
-    returnFlight,
+    flights,
     currency,
     amountTotal,
     bookingDate,
@@ -96,13 +94,11 @@ function serializeBooking(booking) {
     bookingReference: booking.bookingReference,
     status: booking.status,
     passenger: booking.passenger,
-    outboundFlight: booking.outboundFlight,
-    returnFlight: booking.returnFlight,
+    flights: booking.flights,
     amountTotal: booking.amountTotal,
     currency: booking.currency,
     ticketNumber: booking.ticketNumber,
-    seatNumberOutbound: booking.seatNumberOutbound,
-    seatNumberReturn: booking.seatNumberReturn,
+    seatNumbers: booking.seatNumbers,
     bookingDate: booking.bookingDate,
     bookingTime: booking.bookingTime,
   };

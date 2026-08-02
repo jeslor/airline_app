@@ -55,15 +55,13 @@ async function buildTicketPdf(booking) {
 
   const html = TicketDetailsTemplate({
     passenger: booking.passenger,
-    outboundFlight: booking.outboundFlight,
-    returnFlight: booking.returnFlight,
+    flights: booking.flights,
     totalPrice,
     bookingReference: booking.bookingReference,
     bookingDate: booking.bookingDate,
     bookingTime: booking.bookingTime,
     ticketNumber: booking.ticketNumber,
-    seatNumberOutbound: booking.seatNumberOutbound,
-    seatNumberReturn: booking.seatNumberReturn,
+    seatNumbers: booking.seatNumbers,
     qrCodeDataUri,
     logoDataUri,
   });
@@ -151,8 +149,7 @@ function flightSummaryHtml(flight, seatNumber) {
 }
 
 function confirmationEmailHtml(booking) {
-  const { passenger, outboundFlight, returnFlight, bookingReference } =
-    booking;
+  const { passenger, flights, bookingReference } = booking;
   const totalPrice = (booking.amountTotal / 100).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -178,8 +175,9 @@ function confirmationEmailHtml(booking) {
         </tr>
       </table>
 
-      ${flightSummaryHtml(outboundFlight, booking.seatNumberOutbound)}
-      ${flightSummaryHtml(returnFlight, booking.seatNumberReturn)}
+      ${flights
+        .map((flight, i) => flightSummaryHtml(flight, booking.seatNumbers?.[i] || "N/A"))
+        .join("")}
     </div>
 
     <hr style="margin: 30px 0;" />
@@ -250,7 +248,7 @@ export async function deliverTicket(booking) {
   const { error } = await resend.emails.send({
     from: `${AIRLINE_BRAND.name} <${fromEmail}>`,
     to: booking.passenger.email,
-    subject: `Your e-ticket is confirmed - ${booking.bookingReference} to ${booking.outboundFlight.arrivalCity}`,
+    subject: `Your e-ticket is confirmed - ${booking.bookingReference} to ${booking.flights[0].arrivalCity}`,
     html: confirmationEmailHtml(booking),
     attachments: [
       {
