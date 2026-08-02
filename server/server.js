@@ -18,6 +18,13 @@ import { closeBrowser } from "./utils/pdfHelper.js";
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Render (and most PaaS hosts) sit in front of the app as a reverse proxy
+// and set X-Forwarded-For to the real client IP. Trusting exactly one hop
+// tells Express/express-rate-limit to use that header for req.ip instead of
+// the proxy's own IP - without this, every request looks like it comes from
+// the same address, and express-rate-limit refuses to guess and throws.
+app.set("trust proxy", 1);
+
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
