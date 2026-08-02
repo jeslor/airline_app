@@ -27,11 +27,18 @@ export async function generatePDF(html) {
 
   try {
     await page.setContent(html, { waitUntil: "networkidle0" });
-    return await page.pdf({
+    const pdf = await page.pdf({
       format: "A4",
       margin: { top: "20px", right: "14px", bottom: "20px", left: "14px" },
       printBackground: true,
     });
+    // Puppeteer's page.pdf() returns a plain Uint8Array (not a Node
+    // Buffer) when no `path` is given. Callers that do buffer-specific
+    // things with the result (e.g. .toString("base64") for an email
+    // attachment) would silently get garbage instead of an error, since
+    // Uint8Array has its own (different) toString - wrapping here once
+    // means every caller gets a real Buffer.
+    return Buffer.from(pdf);
   } finally {
     await page.close();
   }
