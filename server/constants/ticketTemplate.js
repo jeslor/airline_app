@@ -1,22 +1,51 @@
 import {
   generateTaxesAndFees,
-  generateTicketNumber,
+  generateRandomTerminal,
+  generateCabinZone,
 } from "../utils/ticketAndBookingGenerator.js";
+import { AIRLINE_BRAND } from "./branding.js";
 
-const TicketDetailsTemplate = (
+const formatCurrency = (value) =>
+  Number(value).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const flightRow = (flight, seatNumber) => `
+  <tr>
+    <td>${flight.flightNumber} - CONFIRMED</td>
+    <td>${flight.departureDate}</td>
+    <td>${flight.departureCity} ${flight.departureTime}</td>
+    <td>${flight.arrivalDate}</td>
+    <td>${flight.arrivalCity} ${flight.arrivalTime}</td>
+    <td>${generateRandomTerminal()}</td>
+    <td>${generateCabinZone()}</td>
+    <td><strong>${seatNumber}</strong></td>
+  </tr>
+`;
+
+// ticketNumber and the seat numbers must be generated once (at payment
+// confirmation) and persisted on the Booking, then passed in here — never
+// regenerated on each render, or the PDF/email/DB would disagree with each
+// other on the passenger's actual seat/ticket number.
+const TicketDetailsTemplate = ({
   passenger,
   outboundFlight,
   returnFlight,
-  currentPrice,
+  totalPrice,
   bookingReference,
   bookingDate,
-  bookingTime
-) => `
+  bookingTime,
+  ticketNumber,
+  seatNumberOutbound,
+  seatNumberReturn,
+  qrCodeDataUri,
+}) => `
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Quencer Airlines | e-Ticket Receipt</title>
+    <title>${AIRLINE_BRAND.name} | e-Ticket Receipt</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap"
       rel="stylesheet"
@@ -67,8 +96,19 @@ const TicketDetailsTemplate = (
       .ticket-info {
         padding: 15px 30px;
         background-color: #f8f8f8;
-        text-align: right;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         border-bottom: 1px dashed #ddd;
+      }
+
+      .ticket-info .qr-code img {
+        width: 90px;
+        height: 90px;
+      }
+
+      .ticket-info .ticket-numbers {
+        text-align: right;
       }
 
       .ticket-info .barcode-text {
@@ -88,6 +128,14 @@ const TicketDetailsTemplate = (
         color: #000;
         display: inline-block;
         letter-spacing: 1px;
+        margin-bottom: 6px;
+      }
+
+      .ticket-info .pnr-number {
+        font-family: "Inter", monospace;
+        font-weight: 700;
+        font-size: 14px;
+        color: #9a0507;
       }
 
       .section {
@@ -131,13 +179,14 @@ const TicketDetailsTemplate = (
         padding: 10px 0;
         text-align: left;
         border-bottom: 1px solid #f0f0f0;
+        font-size: 12.5px;
       }
 
       th {
         background-color: #f8f8f8;
         color: #444;
         font-weight: 600;
-        font-size: 13px;
+        font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.3px;
         padding-left: 10px;
@@ -177,6 +226,13 @@ const TicketDetailsTemplate = (
         border-left: 4px solid #ccaa00;
         color: #665500;
         border-radius: 4px;
+      }
+
+      .terms {
+        font-size: 11px;
+        color: #777;
+        margin-top: 15px;
+        line-height: 1.5;
       }
 
       .inspirational-quote {
@@ -304,18 +360,25 @@ const TicketDetailsTemplate = (
       <div class="header">
         <img
           style="height: 50px; width: auto"
-          src="https://jeslor-child-sponsor-platform-app.s3.us-east-1.amazonaws.com/quencer_logo.png"
-          alt="Quencer Airlines Logo"
+          src="${AIRLINE_BRAND.logoUrl}"
+          alt="${AIRLINE_BRAND.name} Logo"
           class="logo"
         />
         <h1>e-Ticket Receipt</h1>
       </div>
 
       <div class="ticket-info">
-        <p class="barcode-text">
-          Scan this code or use the ticket number below for quick check-in.
-        </p>
-        <div class="barcode-number">QA-${generateTicketNumber()}</div>
+        ${
+          qrCodeDataUri
+            ? `<div class="qr-code"><img src="${qrCodeDataUri}" alt="Booking QR code" /></div>`
+            : ""
+        }
+        <div class="ticket-numbers">
+          <p class="barcode-text">Ticket Number</p>
+          <div class="barcode-number">${AIRLINE_BRAND.code}-${ticketNumber}</div>
+          <p class="barcode-text">Booking Reference / PNR</p>
+          <div class="pnr-number">${bookingReference}</div>
+        </div>
       </div>
 
       <!-- Passenger Information -->
@@ -323,9 +386,9 @@ const TicketDetailsTemplate = (
         <div class="section-title">Passenger Information</div>
         <table>
           <tr>
-            <td><strong>Name:</strong><br />${passenger.firstName} ${
-  passenger.lastName
-}</td>
+            <td><strong>Name:</strong><br />${passenger.title} ${
+  passenger.firstName
+} ${passenger.lastName}</td>
             <td><strong>Email:</strong><br />${passenger.email}</td>
           </tr>
           <tr>
@@ -340,9 +403,10 @@ const TicketDetailsTemplate = (
         <div class="section-title">Booking Information</div>
         <table>
           <tr>
-            <td><strong>Booking Reference:</strong><br />${bookingReference}</td>
+            <td><strong>Booking Reference / PNR:</strong><br />${bookingReference}</td>
             <td><strong>Booking Date:</strong><br />${bookingDate}</td>
             <td><strong>Booking Time:</strong><br />${bookingTime}</td>
+            <td><strong>Status:</strong><br />CONFIRMED</td>
           </tr>
         </table>
       </div>
@@ -357,34 +421,27 @@ const TicketDetailsTemplate = (
             <th>Departure Time</th>
             <th>Arrival Date</th>
             <th>Arrival Time</th>
+            <th>Terminal</th>
+            <th>Boarding Zone</th>
+            <th>Seat</th>
           </tr>
-          <tr>
-            <td>${outboundFlight.flightNumber} - CONFIRMED</td>
-            <td>${outboundFlight.departureDate}</td>
-            <td>${outboundFlight.departureCity} ${
-  outboundFlight.departureTime
-}</td>
-            <td>${outboundFlight.arrivalDate}</td>
-            <td>${outboundFlight.arrivalCity} ${outboundFlight.arrivalTime}</td>
-          </tr>
+          ${flightRow(outboundFlight, seatNumberOutbound)}
           <tr>
             <th>Return Flight</th>
             <th>Departure Date</th>
             <th>Departure Time</th>
             <th>Arrival Date</th>
             <th>Arrival Time</th>
+            <th>Terminal</th>
+            <th>Boarding Zone</th>
+            <th>Seat</th>
           </tr>
+          ${flightRow(returnFlight, seatNumberReturn)}
           <tr>
-            <td>${returnFlight.flightNumber} - CONFIRMED</td>
-            <td>${returnFlight.departureDate}</td>
-            <td>${returnFlight.departureCity} ${returnFlight.departureTime}</td>
-            <td>${returnFlight.arrivalDate}</td>
-            <td>${returnFlight.arrivalCity} ${returnFlight.arrivalTime}</td>
-          </tr>
-          <tr>
-            <td colspan="5">
-              <strong>Baggage Allowance:</strong>
-              25KG x 2 per passenger
+            <td colspan="8">
+              <strong>Fare Basis:</strong> YCUS0 — Economy, Non-Refundable &nbsp;•&nbsp;
+              <strong>Baggage Allowance:</strong> 25KG x 2 per passenger &nbsp;•&nbsp;
+              <strong>Check-in:</strong> Opens 24h before departure, closes 45 min prior
             </td>
           </tr>
         </table>
@@ -396,36 +453,31 @@ const TicketDetailsTemplate = (
         <table>
           <tr>
             <td>
-              <strong>Base Fare:</strong><br />$${Number(
-                generateTaxesAndFees(currentPrice).fees
-              ).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              <strong>Base Fare:</strong><br />$${formatCurrency(
+                generateTaxesAndFees(totalPrice).fees
+              )}
             </td>
             <td>
-              <strong>Taxes & Fees:</strong><br />$${Number(
-                generateTaxesAndFees(currentPrice).tax
-              ).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })} (15% tax) + $50 (flat fee)
+              <strong>Taxes & Fees:</strong><br />$${formatCurrency(
+                generateTaxesAndFees(totalPrice).tax
+              )} (15% tax) + $50 (flat fee)
             </td>
           </tr>
           <tr>
             <td colspan="2" class="total-price">
-              <strong>Total Price:</strong> $${Number(
-                currentPrice
-              ).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              <strong>Total Paid:</strong> $${formatCurrency(totalPrice)}
             </td>
           </tr>
           <tr>
-            <td colspan="2"><strong>Payment Method:</strong> Credit Card</td>
+            <td colspan="2"><strong>Payment Method:</strong> Card (via Stripe)</td>
           </tr>
         </table>
+        <p class="terms">
+          This e-ticket is issued subject to ${AIRLINE_BRAND.name}'s conditions of carriage.
+          Fares are non-refundable; date changes may incur a fee. Please arrive at the
+          airport at least 2 hours before scheduled departure. This document, together
+          with a valid photo ID, must be presented at check-in.
+        </p>
       </div>
 
       <div class="section">
@@ -437,13 +489,13 @@ const TicketDetailsTemplate = (
       <div class="contact-info">
         <p>Need assistance or have questions?</p>
         <div>
-          <a href="mailto:support@quencerairlines.com"><span class="icon">📧</span>support@quencerairlines.com</a>
-          <a href="https://www.quencerairlines.com"><span class="icon">🌐</span>www.quencerairlines.com</a>
+          <a href="mailto:${AIRLINE_BRAND.supportEmail}"><span class="icon">📧</span>${AIRLINE_BRAND.supportEmail}</a>
+          <a href="${AIRLINE_BRAND.website}"><span class="icon">🌐</span>${AIRLINE_BRAND.website.replace("https://", "")}</a>
         </div>
       </div>
 
       <div class="footer">
-        © ${new Date().getFullYear()} Quencer Airlines. All rights reserved. Thank you for choosing Quencer Airlines.
+        © ${new Date().getFullYear()} ${AIRLINE_BRAND.name}. All rights reserved. Thank you for choosing ${AIRLINE_BRAND.name}.
       </div>
     </div>
   </body>

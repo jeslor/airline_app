@@ -23,12 +23,10 @@ import { CalendarIcon } from "lucide-react";
 import { flightBookingSchema } from "@/schemas/FlightBookingSchema";
 import { useFlightContext } from "../providers/FlightProvider";
 import { useState } from "react";
+import { getApiBaseUrl } from "@/lib/api";
 
 const SearchFlights = () => {
-  const apiUrl =
-    process.env.NODE_ENV === "development"
-      ? import.meta.env.VITE_API_URL_LOCAL
-      : import.meta.env.VITE_API_URL;
+  const apiUrl = getApiBaseUrl();
   const { setFlightData, handleSetIsSearchingFlights, handleStartOver } =
     useFlightContext();
   const [open, setOpen] = useState(false);
@@ -62,7 +60,6 @@ const SearchFlights = () => {
         },
         body: JSON.stringify(data),
       });
-      console.log(flights);
 
       if (!flights.ok) {
         throw new Error("Failed to fetch flights");
@@ -83,7 +80,7 @@ const SearchFlights = () => {
 
       localStorage.setItem(
         "flightData",
-        JSON.stringify(flightsData.flights || [])
+        JSON.stringify(flightsData.flights || []),
       );
 
       setFlightData(flightsData.flights || []);
@@ -116,13 +113,13 @@ const SearchFlights = () => {
                 "px-6 py-2 rounded-full text-sm font-semibold",
                 tripType === type
                   ? "bg-red-800 hover:bg-red-700 text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300",
               )}
               onClick={() => {
                 form.setValue(
                   "tripType",
                   type as "roundTrip" | "oneWay" | "multiCity",
-                  { shouldValidate: true }
+                  { shouldValidate: true },
                 );
                 if (type !== "roundTrip") {
                   form.setValue("returnDate", undefined, {
@@ -176,7 +173,7 @@ const SearchFlights = () => {
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !departDate && "text-muted-foreground"
+                    !departDate && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -229,7 +226,7 @@ const SearchFlights = () => {
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !form.watch("returnDate") && "text-muted-foreground"
+                      !form.watch("returnDate") && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -271,7 +268,7 @@ const SearchFlights = () => {
           <div
             className={cn(
               "space-y-1",
-              tripType === "oneWay" ? "md:col-span-2" : ""
+              tripType === "oneWay" ? "md:col-span-2" : "",
             )}
           >
             <Label htmlFor="passengers">Passengers</Label>
@@ -309,7 +306,7 @@ const SearchFlights = () => {
                 form.setValue(
                   "cabinClass",
                   value as "economy" | "premiumEconomy" | "business" | "first",
-                  { shouldValidate: true }
+                  { shouldValidate: true },
                 )
               }
             >

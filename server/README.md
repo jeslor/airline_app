@@ -1,18 +1,19 @@
 # 🚀 Server - Airline Booking API
 
-The backend of the Quencer Airlines booking platform, built with **Node.js** and **Express.js**. This server handles flight bookings, e-ticket PDF generation, and email confirmations.
+The backend of the Quencer Airlines booking platform, built with **Node.js** and **Express.js**. This server handles AI-simulated flight search, Stripe-backed bookings, e-ticket PDF generation, and email confirmations.
 
 ---
 
 ## 📋 Table of Contents
 
 - [Tech Stack](#tech-stack)
-- [PDF Generation: Puppeteer vs Playwright vs html-pdf-node](#pdf-generation-comparison)
+- [PDF Generation](#pdf-generation)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [API Endpoints](#api-endpoints)
-- [PDF Generation Setup](#pdf-generation-setup)
 - [Deployment](#deployment)
+- [Testing PDF Generation](#testing-pdf-generation)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -22,51 +23,36 @@ The backend of the Quencer Airlines booking platform, built with **Node.js** and
 
 - **Node.js** – JavaScript runtime
 - **Express.js** – Web framework for API creation
-- **Nodemailer** – Email service for booking confirmations
+- **Resend** – HTTPS email API for booking confirmations (no SMTP port - reliable on Render's free tier / serverless)
 - **Prisma** – ORM for database management (MongoDB)
+- **Stripe** – Payments (test mode); the webhook, not the client, confirms a booking
 - **Dotenv** – Environment variable management
 
 ### PDF Generation
 
-- **html-pdf-node** – Converts HTML to PDF (recommended)
+- **Puppeteer** – full-Chromium HTML-to-PDF rendering, with a QR code embedded via `qrcode`
+
+### Security
+
+- **Helmet** – security response headers
+- **express-rate-limit** – rate limiting on `/api/flights` and `/api/bookings`
+- **Zod** – server-side request validation (mirrors the client's schemas)
+- **CORS** – origin allowlist driven by `ALLOWED_ORIGINS`
+- **HMAC offer signing** – AI-generated flight prices are signed on the way out and re-verified on booking, so a client can't tamper with the amount charged
 
 ### Other
 
-- **CORS** – Cross-Origin Resource Sharing middleware
 - **Body-parser** – Parse incoming request bodies
 
 ---
 
-## 📄 PDF Generation: Why html-pdf-node?
+## 📄 PDF Generation
 
-### Comparison: Puppeteer vs Playwright vs html-pdf-node
+Render (our deployment target) is a **persistent container**, not a serverless function — `apt.txt` already installs the Chromium system libraries Puppeteer needs there. So the server standardizes on full `puppeteer` everywhere (local dev and deployed), rather than juggling a serverless-specific Chromium package with environment-specific branching.
 
-| Feature                    | Puppeteer                            | Playwright                             | html-pdf-node                 |
-| -------------------------- | ------------------------------------ | -------------------------------------- | ----------------------------- |
-| **Browser Dependency**     | Requires Chrome/Chromium (~200MB)    | Requires Chromium/Firefox (~1GB total) | Lightweight, Node-native      |
-| **Install Size**           | ~150MB with chromium                 | ~400MB+ for all browsers               | ~5MB                          |
-| **Memory Usage (Runtime)** | ~50-100MB per instance               | ~50-150MB per instance                 | ~5-10MB per instance          |
-| **Startup Time**           | 1-3 seconds                          | 1-3 seconds                            | <500ms                        |
-| **PDF Quality**            | Excellent (full browser rendering)   | Excellent (full browser rendering)     | Very Good (wkhtmltopdf-based) |
-| **Serverless Friendly**    | Difficult (large binary)             | Difficult (large binary)               | ✅ Perfect for serverless     |
-| **Render.com Deployment**  | ⚠️ Requires apt.txt + postinstall    | ⚠️ Requires apt.txt + postinstall      | ✅ Works out-of-box           |
-| **Complex Layouts**        | ✅ Full CSS/JS support               | ✅ Full CSS/JS support                 | Good (CSS 2.1)                |
-| **Concurrent PDFs**        | Heavy (spins up browser per request) | Heavy (spins up browser per request)   | Lightweight & fast            |
-| **Maintenance**            | Frequent updates                     | Frequent updates                       | Stable, minimal updates       |
+`server/utils/pdfHelper.js` launches a single headless Chromium instance **once** and reuses it for every request (`browser.newPage()` per PDF, closing only the page afterwards) instead of paying a multi-second browser-launch cost on every ticket. The browser is closed gracefully on `SIGTERM`/`SIGINT` (see `server.js`).
 
-### Why html-pdf-node for Quencer Airlines?
-
-✅ **Lightweight & Serverless-Ready**: No browser binary bloat. Ideal for Render, Vercel, or AWS Lambda.
-
-✅ **Fast & Resource-Efficient**: ~50MB vs 200-400MB. Reduced deployment size and memory footprint.
-
-✅ **Perfect for Simple Tickets**: HTML e-tickets don't need interactive JavaScript. Simple CSS/HTML renders beautifully.
-
-✅ **Concurrent PDF Generation**: Spin up multiple PDFs without launching separate browser processes.
-
-✅ **Production-Ready for Scale**: Lower infrastructure costs on Render or cloud platforms.
-
-⚠️ **Trade-off**: No JavaScript execution or dynamic rendering. For static tickets, this is not an issue.
+The ticket template (`server/constants/ticketTemplate.js`) renders a QR code, PNR, persisted seat numbers/ticket number, terminal/boarding zone, fare basis, and terms — the ticket number and seat numbers are generated **once**, at Stripe webhook confirmation time, and persisted on the `Booking` record so the PDF, the confirmation email, and any later `GET /api/bookings/:reference` lookup always agree.
 
 ---
 
@@ -74,10 +60,11 @@ The backend of the Quencer Airlines booking platform, built with **Node.js** and
 
 ### Prerequisites
 
-- Node.js (v16+)
+- Node.js (v18+)
 - npm or Yarn
-- MongoDB (or managed service)
-- Email provider (Gmail, SendGrid, etc.)
+- MongoDB (Atlas or self-hosted) — the connection string must include a database name, e.g. `.../airline_app?retryWrites=true`
+- A [Resend](https://resend.com) account (free tier is fine)
+- A [Stripe](https://dashboard.stripe.com/register) account (test mode is fine)
 
 ### Installation
 
@@ -89,11 +76,13 @@ cd airline_app/server
 # Install dependencies
 npm install
 
-# Create a .env file (copy from .env.example or see Environment Variables below)
-cp server.env.example server.env
+# Create a server.env file (see Environment Variables below)
 
-# Install Playwright browsers (for development/testing if you switch later)
-npm run postinstall
+# Push the Prisma schema to your database
+npx prisma db push
+
+# (optional) seed a handful of demo bookings
+npm run seed
 
 # Start the server
 npm start
@@ -110,27 +99,29 @@ Create a `server.env` file in the root of the `/server` folder:
 PORT=3000
 NODE_ENV=development
 
-# Database
-DBURL=mongodb+srv://user:password@cluster.mongodb.net/airline_app
+# Database (must include a database name in the path)
+DBURL=mongodb+srv://user:password@cluster.mongodb.net/airline_app?retryWrites=true&w=majority
 
 # Google Generative AI (for flight search)
 GOOGLE_GENERATIVE_AI_API_KEY=your_google_ai_key
 
-# Email Configuration
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
+# Email (Resend - https://resend.com, HTTPS API, no SMTP port required)
+RESEND_API_KEY=re_your_resend_api_key
+# Must be on a domain verified in Resend (dashboard.resend.com/domains).
+# Omit to use Resend's sandbox sender, which only delivers to the email
+# your Resend account was signed up with.
+RESEND_FROM_EMAIL=tickets@yourdomain.com
 
-# CORS
+# CORS - comma-separated list of allowed frontend origins
 ALLOWED_ORIGINS=http://localhost:5173,https://airline-app-gamma.vercel.app
 
-# PDF Generation
-PDF_MARGIN_TOP=10
-PDF_MARGIN_BOTTOM=10
-PDF_MARGIN_LEFT=10
-PDF_MARGIN_RIGHT=10
+# HMAC secret used to sign AI-generated flight offers so prices can't be
+# tampered with client-side before payment - any long random string
+OFFER_SIGNING_SECRET=replace_with_a_long_random_string
+
+# Stripe (test mode)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
 ---
@@ -139,7 +130,7 @@ PDF_MARGIN_RIGHT=10
 
 ### POST `/api/flights`
 
-Search for available flights.
+Search for available flights (AI-generated). Every returned flight is HMAC-signed (`offerId`/`issuedAt`/`signature`) - this is what `/api/bookings` re-verifies before charging anything.
 
 **Request Body:**
 
@@ -157,15 +148,15 @@ Search for available flights.
 ```json
 {
   "flights": {
-    "outboundFlights": [...],
-    "returnFlights": [...]
+    "outboundFlights": [{ "...": "signed flight offer" }],
+    "returnFlights": [{ "...": "signed flight offer" }]
   }
 }
 ```
 
-### POST `/api/book`
+### POST `/api/bookings`
 
-Book a flight and generate an e-ticket.
+Creates a `Booking` (`PENDING_PAYMENT`) and a Stripe PaymentIntent, sized from the *signed* offer prices — never from client-submitted totals.
 
 **Request Body:**
 
@@ -179,15 +170,10 @@ Book a flight and generate an e-ticket.
     "phoneNumber": "+1234567890",
     "country": "USA"
   },
-  "outboundFlight": {
-    /* flight details */
-  },
-  "returnFlight": {
-    /* flight details */
-  },
+  "outboundFlight": { "...": "signed offer from /api/flights" },
+  "returnFlight": { "...": "signed offer from /api/flights" },
   "bookingDate": "2024-11-25",
-  "bookingTime": "14:30",
-  "totalPrice": "$450.00"
+  "bookingTime": "14:30"
 }
 ```
 
@@ -195,247 +181,97 @@ Book a flight and generate an e-ticket.
 
 ```json
 {
-  "message": "Email with Ticket sent successfully!",
-  "status": 200,
+  "message": "Booking created, awaiting payment",
   "data": {
-    "bookingReference": "ABC123XYZ",
-    "bookingStatus": "confirmed",
-    "passenger": {
-      /* passenger details */
-    }
+    "bookingReference": "ABC123",
+    "clientSecret": "pi_..._secret_...",
+    "amountTotal": 93000,
+    "currency": "usd"
   }
 }
 ```
 
----
+The client confirms payment client-side with Stripe Elements using `clientSecret`. Ticket issuance itself happens server-side, from the webhook below.
 
-## 📄 PDF Generation Setup
+### GET `/api/bookings/:reference`
 
-### Using html-pdf-node (Recommended)
-
-#### 1. Install html-pdf-node
-
-```bash
-npm install html-pdf-node
-```
-
-#### 2. Update `server/controllers/flights.controller.js`
-
-Replace the Playwright/Puppeteer logic with html-pdf-node:
-
-```javascript
-import htmlPdf from "html-pdf-node";
-
-const createPDF = async (
-  passenger,
-  outboundFlight,
-  returnFlight,
-  currentPrice,
-  bookingReference,
-  bookingDate,
-  bookingTime
-) => {
-  try {
-    // Generate HTML from template
-    const ticketHtml = TicketDetailsTemplate(
-      passenger,
-      outboundFlight,
-      returnFlight,
-      currentPrice,
-      bookingReference,
-      bookingDate,
-      bookingTime
-    );
-
-    // Define PDF options
-    const options = {
-      format: "A4",
-      margin: {
-        top: "10mm",
-        right: "10mm",
-        bottom: "10mm",
-        left: "10mm",
-      },
-      printBackground: true,
-      preferCSSPageSize: true,
-    };
-
-    // Generate PDF buffer
-    const ticketPdfBuffer = await htmlPdf.generatePdf(
-      { content: ticketHtml },
-      options
-    );
-
-    return ticketPdfBuffer;
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    throw new Error("Error generating flight ticket PDF: " + error.message);
-  }
-};
-```
-
-#### 3. Remove Old Dependencies
-
-If switching from Playwright/Puppeteer:
-
-```bash
-npm uninstall playwright puppeteer @sparticuz/chromium
-```
-
-#### 4. Update `package.json`
-
-Remove or update the postinstall script:
+Look up a booking's current status - the frontend polls this right after `stripe.confirmPayment()` resolves, since the webhook (not the client) is what actually confirms the booking.
 
 ```json
 {
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+  "data": {
+    "bookingReference": "ABC123",
+    "status": "CONFIRMED",
+    "ticketNumber": "QA1234567890",
+    "seatNumberOutbound": "14C",
+    "seatNumberReturn": "22A"
   }
 }
 ```
+
+### POST `/api/webhooks/stripe`
+
+Stripe webhook endpoint (raw body, signature-verified via `STRIPE_WEBHOOK_SECRET`). On `payment_intent.succeeded` it idempotently generates the ticket number/seat numbers, builds the PDF, emails it, and flips the booking to `CONFIRMED`. On `payment_intent.payment_failed` it flips the booking to `FAILED`. This is a Stripe→server callback, not something the frontend calls directly.
 
 ---
 
 ## 🌐 Deployment
 
-### Render.com (Recommended for html-pdf-node)
+### Render.com
 
-#### 1. Connect your repository
-
-- Go to [Render.com](https://render.com)
-- Create a new Web Service
-- Connect your GitHub repository
-
-#### 2. Configure Service Settings
-
-- **Name**: `airline-api`
-- **Root Directory**: `server` (if using monorepo)
-- **Build Command**: `npm install`
-- **Start Command**: `npm start`
-
-#### 3. Add Environment Variables
-
-In Render dashboard → Environment:
-
-```
-PORT=3000
-NODE_ENV=production
-DBURL=<your_mongodb_connection_string>
-GOOGLE_GENERATIVE_AI_API_KEY=<your_key>
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=<your_email>
-EMAIL_PASS=<your_app_password>
-ALLOWED_ORIGINS=https://airline-app-gamma.vercel.app
-```
-
-#### 4. Deploy
-
-- Push to main branch
-- Render automatically builds and deploys
+1. Go to [Render.com](https://render.com) → New Web Service → connect this repo
+2. **Root Directory**: `server`
+3. **Build Command**: `npm install`
+4. **Start Command**: `npm start`
+5. Environment variables (Render dashboard → Environment): all of the vars listed above, plus `NODE_ENV=production`
+6. Register a webhook endpoint in the Stripe dashboard pointing at `https://<your-render-url>/api/webhooks/stripe`, and set its signing secret as `STRIPE_WEBHOOK_SECRET`
+7. Push to `main` → Render auto-deploys
 
 ### Local Development
 
 ```bash
-# Install dependencies
 npm install
+npx prisma db push
+npm start           # http://localhost:3000
 
-# Start development server
-npm start
-
-# Server will run on http://localhost:3000
+# in a second terminal, forward Stripe webhook events locally:
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
 ---
 
 ## 🧪 Testing PDF Generation
 
-### Test Endpoint (Optional)
+`npm run seed` creates a few demo `Booking` records (including `CONFIRMED` ones with seat/ticket numbers already set) so you can exercise `GET /api/bookings/:reference` and inspect the ticket data without running a full checkout. To see an actual PDF, run the full flow: search → select flights → submit passenger details → pay with a Stripe test card (`4242 4242 4242 4242`, any future expiry/CVC) → check the inbox for the passenger email (if using Resend's sandbox sender, that must be the email address your Resend account signed up with).
 
-Add this endpoint to `server/server.js` for testing:
-
-```javascript
-app.get(
-  "/api/test-pdf",
-  asyncWrapper(async (req, res) => {
-    const testHtml = `
-    <h1>Test PDF</h1>
-    <p>If you see this, PDF generation is working!</p>
-    <p>Generated at: ${new Date().toISOString()}</p>
-  `;
-
-    try {
-      const pdfBuffer = await createPDF(testHtml);
-      res.contentType("application/pdf");
-      res.send(pdfBuffer);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  })
-);
-```
-
-Test with:
+Unit tests for the pieces that don't need a live database or Stripe (`offerSigning`, `ticketAndBookingGenerator`) run via:
 
 ```bash
-curl http://localhost:3000/api/test-pdf -o test.pdf
+npm test
 ```
-
----
-
-## 📊 Performance Comparison
-
-### Deployment Size
-
-- **Puppeteer**: ~200MB (+ chromium)
-- **Playwright**: ~400MB (+ browsers)
-- **html-pdf-node**: ~5MB ✅
-
-### Startup Time
-
-- **Puppeteer**: 1-3 seconds
-- **Playwright**: 1-3 seconds
-- **html-pdf-node**: <500ms ✅
-
-### Memory Per PDF
-
-- **Puppeteer**: 50-100MB
-- **Playwright**: 50-150MB
-- **html-pdf-node**: 5-10MB ✅
 
 ---
 
 ## 🐛 Troubleshooting
 
-### HTML to PDF Not Generating?
-
-Ensure your HTML template is simple and CSS-compatible:
-
-- Use inline styles or `<style>` tags
-- Avoid JavaScript execution
-- Test with basic HTML first
-
-### Email Not Sending?
-
-- Verify `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`
-- Use Gmail App Password (not account password)
-- Check firewall/port 587 is open
-
-### Render Deployment Fails?
-
-- Check build logs in Render dashboard
-- Ensure `server/package.json` exists
-- Verify environment variables are set
+| Issue                        | Solution                                                   |
+| ----------------------------- | ------------------------------------------------------------ |
+| **CORS errors**              | Verify `ALLOWED_ORIGINS` includes the calling frontend's exact origin |
+| **PDF not generating**       | Ensure Puppeteer's Chromium is installed (`npm install`); on Render, confirm `apt.txt` system deps applied |
+| **Emails not sending**       | Verify `RESEND_API_KEY` is set; if you haven't verified a domain in Resend, the sandbox sender only delivers to your own Resend account email - set `RESEND_FROM_EMAIL` once a domain is verified |
+| **MongoDB connection fails** | Confirm `DBURL` includes a database name and the IP is allowed in Atlas |
+| **Stripe webhook 400s**      | Confirm `STRIPE_WEBHOOK_SECRET` matches the endpoint you registered (or your local `stripe listen` session) |
+| **Booking stuck on PENDING_PAYMENT** | The webhook hasn't fired yet - check `stripe listen`/Stripe dashboard event logs for delivery errors |
 
 ---
 
 ## 📚 Resources
 
-- [html-pdf-node Docs](https://www.npmjs.com/package/html-pdf-node)
+- [Stripe Docs](https://stripe.com/docs/payments/payment-intents)
+- [Puppeteer Docs](https://pptr.dev/)
+- [Prisma + MongoDB Docs](https://www.prisma.io/docs/orm/overview/databases/mongodb)
 - [Express.js Docs](https://expressjs.com/)
-- [Nodemailer Docs](https://nodemailer.com/)
+- [Resend Docs](https://resend.com/docs)
 - [Render.com Docs](https://render.com/docs)
 
 ---

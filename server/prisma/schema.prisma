@@ -11,65 +11,37 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  // url      = env("DBURL")
+  url      = env("DBURL")
 }
 
-model Airline {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  code        String   @unique
-  description String?
-  logoUrl     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// A Booking is created as soon as the passenger submits their details
+// (status PENDING_PAYMENT) and only becomes CONFIRMED once the Stripe
+// webhook reports the PaymentIntent succeeded. Flights are AI-generated
+// per search rather than stable inventory, so the chosen legs are stored
+// as embedded snapshots rather than foreign keys.
+model Booking {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookingReference      String   @unique
+  status                String   @default("PENDING_PAYMENT") // PENDING_PAYMENT | CONFIRMED | FAILED
 
-  flights     Flight[]
-}
+  passenger             Json
+  outboundFlight        Json
+  returnFlight          Json
 
-model Flight {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  flightNumber String
-  departure   DateTime
-  arrival     DateTime
-  origin      String
-  destination String
-  airlineId   String   @db.ObjectId
-  airline     Airline  @relation(fields: [airlineId], references: [id])
+  currency              String   @default("usd")
+  amountTotal           Int // authoritative charge amount, in cents
 
-  passengers  Passenger[]
-  tickets     Ticket[] // Added opposite relation for Ticket
+  stripePaymentIntentId String?  @unique
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  ticketNumber          String?
+  seatNumberOutbound    String?
+  seatNumberReturn      String?
 
-  @@index([flightNumber])
-}
+  bookingDate           String
+  bookingTime           String
 
-model Passenger {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  firstName   String
-  lastName    String
-  email       String   @unique
-  phoneNumber String?
-  flightId    String   @db.ObjectId
-  flight      Flight   @relation(fields: [flightId], references: [id])
-  tickets     Ticket[] // Added relation to Ticket
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Ticket {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  passengerId String   @db.ObjectId
-  passenger   Passenger @relation(fields: [passengerId], references: [id])
-  flightId    String   @db.ObjectId
-  flight      Flight   @relation(fields: [flightId], references: [id])
-  seatNumber  String
-  price       Float
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([passengerId, flightId])
+  @@index([status])
 }

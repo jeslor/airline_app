@@ -8,7 +8,7 @@
 
 - **Frontend:** Vite + React + TypeScript + Tailwind CSS + shadcn/ui - deployed on **Vercel**
 - **Backend:** Node.js + Express.js + MongoDB + Prisma - deployed on **Render**
-- **Features:** AI-powered flight search (Google Generative AI), dynamic PDF e-ticket generation (html-pdf-node), automated email confirmations, and real-time booking management
+- **Features:** AI-powered flight search (Google Generative AI), Stripe payments (test mode), persisted bookings, dynamic PDF e-ticket generation (Puppeteer, with QR code), automated email confirmations
 
 **Live URLs:**
 
@@ -19,9 +19,11 @@
 
 ## 🚀 Key Features
 
-✅ **Modern Flight Search** - AI-powered flight discovery with dynamic pricing  
-✅ **Secure Booking** - Complete validation and error handling  
-✅ **PDF E-Tickets** - Lightweight, serverless-friendly html-pdf-node generation  
+✅ **Modern Flight Search** - AI-powered flight discovery with HMAC-signed, tamper-proof pricing  
+✅ **Stripe Payments** - Real PaymentIntent flow (test mode); webhook-confirmed, idempotent booking issuance  
+✅ **Persisted Bookings** - Every booking is stored in MongoDB via Prisma, lookup by reference  
+✅ **Secure Booking** - Server-side validation, CORS allowlist, rate limiting, error handling  
+✅ **PDF E-Tickets** - Puppeteer-rendered e-ticket with QR code, PNR, seats, and terminal/gate details  
 ✅ **Email Confirmations** - Automated booking confirmations with attached tickets  
 ✅ **Responsive UI** - Mobile-first design with Tailwind CSS  
 ✅ **Real-time Validation** - React Hook Form + Zod schema validation  
@@ -55,12 +57,13 @@
 | **Runtime**        | Node.js                | JavaScript server environment    |
 | **Framework**      | Express.js             | Lightweight, fast web framework  |
 | **Language**       | JavaScript (ES6+)      | Modern async/await patterns      |
-| **Database**       | MongoDB                | NoSQL document storage           |
+| **Database**       | MongoDB                | Persisted bookings (Prisma `Booking` model) |
 | **ORM**            | Prisma                 | Type-safe database queries       |
-| **PDF Generation** | html-pdf-node          | Serverless-friendly PDF creation |
-| **Email**          | Nodemailer             | SMTP email delivery              |
-| **AI**             | Google Generative AI   | Dynamic flight data generation   |
-| **Auth**           | Environment-based CORS | Request origin validation        |
+| **Payments**       | Stripe (test mode)     | PaymentIntents + webhook-confirmed bookings |
+| **PDF Generation** | Puppeteer              | Server-rendered e-ticket PDF with QR code |
+| **Email**          | Resend                 | HTTPS email API (no SMTP port - works on Render free tier/serverless) |
+| **AI**             | Google Generative AI   | Dynamic flight data generation (HMAC-signed offers) |
+| **Security**       | CORS allowlist, Helmet, express-rate-limit, Zod | Origin/input validation & abuse protection |
 | **Middleware**     | CORS, Body-parser      | Request handling & security      |
 | **Hosting**        | Render                 | Container-based deployment       |
 
@@ -112,7 +115,7 @@ airline_app/
 - **Git**
 - **MongoDB** connection string (MongoDB Atlas or local)
 - **Google API Key** for Generative AI
-- **Email credentials** (SMTP server details)
+- **Resend API key** for sending emails (resend.com)
 
 ### Quick Setup
 
@@ -155,33 +158,39 @@ Backend runs at `http://localhost:3000`
 PORT=3000
 NODE_ENV=development
 
-# Database
-DBURL=mongodb+srv://username:password@cluster.mongodb.net/airline_app
+# Database (must include a database name in the path, e.g. /airline_app)
+DBURL=mongodb+srv://username:password@cluster.mongodb.net/airline_app?retryWrites=true&w=majority
 
 # Google Generative AI (for flight search)
 GOOGLE_GENERATIVE_AI_API_KEY=your_google_ai_key_here
 
-# Email Configuration
-EMAIL_HOST=smtp.your-email-provider.com
-EMAIL_PORT=465
-EMAIL_SECURE=true
-EMAIL_USER=your_email@example.com
-EMAIL_PASS=your_app_password
+# Email (Resend - https://resend.com, HTTPS API, no SMTP port required)
+RESEND_API_KEY=re_your_resend_api_key
+# Must be on a domain verified in Resend; omit to use Resend's sandbox
+# sender, which only delivers to the email your Resend account signed up with
+RESEND_FROM_EMAIL=tickets@yourdomain.com
 
-# CORS - Frontend origins allowed
+# CORS - comma-separated list of allowed frontend origins
 ALLOWED_ORIGINS=http://localhost:5173,https://your-frontend-url.com
 
-# PDF Generation (optional - html-pdf-node defaults)
-PDF_MARGIN_TOP=10
-PDF_MARGIN_BOTTOM=10
-PDF_MARGIN_LEFT=10
-PDF_MARGIN_RIGHT=10
+# HMAC secret used to sign AI-generated flight offers so prices can't be
+# tampered with client-side before payment (any long random string)
+OFFER_SIGNING_SECRET=replace_with_a_long_random_string
+
+# Stripe (test mode) - https://dashboard.stripe.com/test/apikeys
+# and https://dashboard.stripe.com/test/webhooks (or `stripe listen` locally)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
 ### Frontend (.env or .env.local in client/)
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_URL_LOCAL=http://localhost:3000/api
+VITE_API_URL=https://your-backend-url.com/api
+
+# Stripe (test mode) publishable key - safe to expose client-side
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ```
 
 ---
@@ -225,9 +234,11 @@ VITE_API_BASE_URL=http://localhost:3000
 }
 ```
 
-### Book Flight
+Each returned flight is HMAC-signed (`offerId`/`issuedAt`/`signature`) so the price can be verified server-side when the flight is booked - it can't be tampered with client-side.
 
-**POST** `/api/book`
+### Create Booking (starts payment)
+
+**POST** `/api/bookings`
 
 ```json
 {
@@ -239,30 +250,47 @@ VITE_API_BASE_URL=http://localhost:3000
     "phoneNumber": "+1234567890",
     "country": "USA"
   },
-  "outboundFlight": {
-    /* flight object */
-  },
-  "returnFlight": {
-    /* flight object */
-  },
+  "outboundFlight": { "...": "signed flight offer from /api/flights" },
+  "returnFlight": { "...": "signed flight offer from /api/flights" },
   "bookingDate": "2024-11-25",
-  "bookingTime": "14:30",
-  "totalPrice": "$450.00"
+  "bookingTime": "14:30"
 }
 ```
 
-Response:
+Creates a `Booking` record (`PENDING_PAYMENT`) and a Stripe PaymentIntent for the authoritative price (computed server-side from the signed offers, never from client input):
 
 ```json
 {
-  "message": "Email with Ticket sent successfully!",
-  "status": 200,
+  "message": "Booking created, awaiting payment",
   "data": {
-    "bookingReference": "ABC123XYZ",
-    "bookingStatus": "confirmed"
+    "bookingReference": "ABC123",
+    "clientSecret": "pi_..._secret_...",
+    "amountTotal": 93000,
+    "currency": "usd"
   }
 }
 ```
+
+The client confirms payment with Stripe Elements using `clientSecret`. The **Stripe webhook** (`POST /api/webhooks/stripe`), not the client, is the source of truth: on `payment_intent.succeeded` it issues the ticket number/seats, generates the PDF, emails it, and flips the booking to `CONFIRMED`.
+
+### Get Booking
+
+**GET** `/api/bookings/:reference`
+
+```json
+{
+  "data": {
+    "bookingReference": "ABC123",
+    "status": "CONFIRMED",
+    "ticketNumber": "QA1234567890",
+    "seatNumberOutbound": "14C",
+    "seatNumberReturn": "22A",
+    "...": "passenger, flights, amountTotal, etc."
+  }
+}
+```
+
+Poll this after `stripe.confirmPayment()` resolves to know when the webhook has finished confirming the booking.
 
 ---
 
@@ -309,8 +337,8 @@ cd server && npm start
 | Issue                        | Solution                                                   |
 | ---------------------------- | ---------------------------------------------------------- |
 | **CORS errors**              | Verify `ALLOWED_ORIGINS` env var includes frontend URL     |
-| **PDF not generating**       | Check html-pdf-node is installed: `npm list html-pdf-node` |
-| **Emails not sending**       | Verify EMAIL\_\* credentials and port 465 is open          |
+| **PDF not generating**       | Ensure Puppeteer's Chromium is installed (`npm install` in `server/`); on Render, check `apt.txt` system deps are applied |
+| **Emails not sending**       | Verify `RESEND_API_KEY` is set; if using the sandbox sender, it only delivers to the email your Resend account signed up with - verify a domain and set `RESEND_FROM_EMAIL` for real recipients |
 | **MongoDB connection fails** | Test connection string, ensure IP whitelist in Atlas       |
 | **Vite build fails**         | Clear `.vite` cache: `rm -rf .vite && npm run build`       |
 
@@ -356,4 +384,4 @@ For issues, questions, or suggestions:
 
 ---
 
-**Last Updated:** November 25, 2025
+**Last Updated:** August 2, 2026

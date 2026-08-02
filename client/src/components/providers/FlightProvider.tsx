@@ -17,6 +17,10 @@ interface FlightContextType {
     bookingTime: string;
     bookingStatus?: string;
     bookingReference?: string;
+    clientSecret?: string;
+    amountTotal?: number;
+    currency?: string;
+    paymentStatus?: "idle" | "pending" | "confirmed" | "failed";
   } | null;
   sections: any;
   setSections: (section: any) => void;
@@ -55,6 +59,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
           bookingDate: "",
           bookingTime: "",
           bookingReference: "",
+          paymentStatus: "idle",
         }
   );
   const [sections, setSections] = useState<any>(
@@ -113,6 +118,7 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
       bookingDate: "",
       bookingTime: "",
       bookingReference: "",
+      paymentStatus: "idle",
     });
     setFlightData({
       outboundFlights: [],

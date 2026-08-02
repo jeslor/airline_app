@@ -1,52 +1,46 @@
 // server/utils/pdfHelper.js
-import chromium from "chrome-aws-lambda";
-import puppeteer from "puppeteer-core";
-import localPuppeteer from "puppeteer"; // <-- real Chrome/Chromium for local dev
+import puppeteer from "puppeteer";
 
-export async function generatePDF(html) {
-  let browser;
+// Render (our deployment target) is a persistent container, not a
+// serverless function, so a single long-lived Chromium instance can be
+// reused across requests instead of paying a ~1-3s launch cost per PDF.
+let browserPromise = null;
 
-  try {
-    const isLocal = !process.env.VERCEL; // true when running on dev machine
-
-    if (isLocal) {
-      console.log("Running locally → using full Puppeteer");
-
-      browser = await localPuppeteer.launch({
+async function getBrowser() {
+  if (!browserPromise) {
+    browserPromise = puppeteer
+      .launch({
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      })
+      .catch((error) => {
+        browserPromise = null; // allow the next call to retry the launch
+        throw error;
       });
-    } else {
-      console.log("Running on Vercel → using chrome-aws-lambda");
+  }
+  return browserPromise;
+}
 
-      const executablePath = await chromium.executablePath;
+export async function generatePDF(html) {
+  const browser = await getBrowser();
+  const page = await browser.newPage();
 
-      if (!executablePath) {
-        throw new Error("Chrome AWS Lambda executablePath is NULL");
-      }
-
-      browser = await puppeteer.launch({
-        executablePath,
-        args: chromium.args,
-        headless: chromium.headless,
-        defaultViewport: chromium.defaultViewport,
-      });
-    }
-
-    const page = await browser.newPage();
+  try {
     await page.setContent(html, { waitUntil: "networkidle0" });
-
-    const pdfBuffer = await page.pdf({
+    return await page.pdf({
       format: "A4",
       margin: { top: "20px", right: "14px", bottom: "20px", left: "14px" },
       printBackground: true,
     });
-
-    return pdfBuffer;
-  } catch (error) {
-    console.error("PDF generation error:", error);
-    throw error;
   } finally {
-    if (browser) await browser.close();
+    await page.close();
+  }
+}
+
+export async function closeBrowser() {
+  if (browserPromise) {
+    const browser = await browserPromise;
+    browserPromise = null;
+    await browser.close();
   }
 }
