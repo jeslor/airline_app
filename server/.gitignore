@@ -5,6 +5,10 @@ server.env
 
 /generated/prisma
 
+# Puppeteer's downloaded Chromium (see .puppeteerrc.cjs) - redownloaded on
+# every npm install, should not be committed
+/.cache/
+
 # Playwright
 /test-results/
 /playwright-report/

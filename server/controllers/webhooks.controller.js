@@ -31,8 +31,20 @@ async function handlePaymentSucceeded(paymentIntent) {
   }
 
   const booking = await prisma.booking.findUnique({ where: { bookingReference } });
-  if (booking) {
+  if (!booking) return;
+
+  try {
     await deliverTicket(booking);
+  } catch (error) {
+    // PDF/email delivery failed after we'd already marked this CONFIRMED.
+    // Revert so the idempotency guard above doesn't treat this as "already
+    // done" - a Stripe retry (triggered by the 500 this throw causes) needs
+    // to actually re-attempt delivery, not silently no-op forever.
+    await prisma.booking.update({
+      where: { bookingReference },
+      data: { status: "PENDING_PAYMENT" },
+    });
+    throw error;
   }
 }
 
