@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -9,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AirportCombobox } from "./AirportCombobox";
 import {
   Popover,
   PopoverContent,
@@ -25,14 +26,45 @@ import { useFlightContext } from "../providers/FlightProvider";
 import { useState } from "react";
 import { getApiBaseUrl } from "@/lib/api";
 
+type FormValues = z.infer<typeof flightBookingSchema>;
+
+const MAX_LEGS = 6;
+
+// Normalizes any trip type into the flat `legs` array the server expects -
+// the server never needs to know about roundTrip/oneWay/multiCity at all.
+function buildSearchLegs(data: FormValues) {
+  if (data.tripType === "multiCity") {
+    return (data.legs || []).map((leg) => ({
+      origin: leg.origin,
+      destination: leg.destination,
+      date: leg.date,
+    }));
+  }
+  if (data.tripType === "oneWay") {
+    return [
+      { origin: data.origin, destination: data.destination, date: data.departDate },
+    ];
+  }
+  // roundTrip
+  return [
+    { origin: data.origin, destination: data.destination, date: data.departDate },
+    { origin: data.destination, destination: data.origin, date: data.returnDate },
+  ];
+}
+
 const SearchFlights = () => {
   const apiUrl = getApiBaseUrl();
-  const { setFlightData, handleSetIsSearchingFlights, handleStartOver } =
-    useFlightContext();
+  const {
+    setFlightData,
+    handleSetIsSearchingFlights,
+    handleStartOver,
+    handleContinueBooking,
+  } = useFlightContext();
   const [open, setOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
+  const [openLegIndex, setOpenLegIndex] = useState<number | null>(null);
 
-  const form = useForm<z.infer<typeof flightBookingSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(flightBookingSchema),
     defaultValues: {
       tripType: "roundTrip",
@@ -42,23 +74,38 @@ const SearchFlights = () => {
       returnDate: undefined,
       passengers: 1,
       cabinClass: "economy",
+      legs: [
+        { origin: "", destination: "", date: undefined },
+        { origin: "", destination: "", date: undefined },
+      ],
     },
     mode: "onChange",
   });
 
+  const {
+    fields: legFields,
+    append: appendLeg,
+    remove: removeLeg,
+  } = useFieldArray({ control: form.control, name: "legs" });
+
   const tripType = form.watch("tripType");
   const departDate = form.watch("departDate");
 
-  const onSubmit = async (data: z.infer<typeof flightBookingSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     try {
       handleSetIsSearchingFlights(true);
+      const legs = buildSearchLegs(data);
+
       const flights = await fetch(`${apiUrl}/flights`, {
         method: "POST",
         headers: {
-          "Access-Control-Allow-Origin": "*",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          legs,
+          passengers: data.passengers,
+          cabinClass: data.cabinClass,
+        }),
       });
 
       if (!flights.ok) {
@@ -70,7 +117,6 @@ const SearchFlights = () => {
         throw new Error(flightsData.error);
       }
 
-      // check if there are some flights in localStorage
       if (localStorage.getItem("flightData")) {
         localStorage.removeItem("flightData");
       }
@@ -78,12 +124,15 @@ const SearchFlights = () => {
         localStorage.removeItem("bookingData");
       }
 
-      localStorage.setItem(
-        "flightData",
-        JSON.stringify(flightsData.flights || []),
-      );
+      const resultLegs = flightsData.legs || [];
 
-      setFlightData(flightsData.flights || []);
+      localStorage.setItem("flightData", JSON.stringify({ legs: resultLegs }));
+      setFlightData({ legs: resultLegs });
+      handleContinueBooking({
+        currentLegIndex: 0,
+        totalLegs: resultLegs.length,
+        finalBooking: false,
+      });
     } catch (error: any) {
       console.error("Error fetching flights:", error);
       alert("Failed to fetch flights. Please try again later.");
@@ -136,102 +185,201 @@ const SearchFlights = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="space-y-1">
-            <Label htmlFor="origin">From</Label>
-            <Input
-              id="origin"
-              placeholder="e.g., London (LHR)"
-              {...form.register("origin")}
-            />
-            {form.formState.errors.origin && (
-              <p className="text-red-500 text-sm">
-                {form.formState.errors.origin.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="destination">To</Label>
-            <Input
-              id="destination"
-              placeholder="e.g., Doha (DOH)"
-              {...form.register("destination")}
-            />
-            {form.formState.errors.destination && (
-              <p className="text-red-500 text-sm">
-                {form.formState.errors.destination.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="departDate">Depart</Label>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !departDate && "text-muted-foreground",
+        {tripType === "multiCity" ? (
+          <div className="space-y-4 mb-8">
+            {legFields.map((field, index) => (
+              <div
+                key={field.id}
+                className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-4 items-start bg-gray-50 rounded-xl p-4"
+              >
+                <div className="space-y-1">
+                  <Label htmlFor={`legs.${index}.origin`}>
+                    Flight {index + 1} - From
+                  </Label>
+                  <Controller
+                    control={form.control}
+                    name={`legs.${index}.origin` as const}
+                    render={({ field }) => (
+                      <AirportCombobox
+                        id={`legs.${index}.origin`}
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="e.g., London (LHR)"
+                      />
+                    )}
+                  />
+                  {form.formState.errors.legs?.[index]?.origin && (
+                    <p className="text-red-500 text-sm">
+                      {form.formState.errors.legs[index]?.origin?.message}
+                    </p>
                   )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {departDate ? (
-                    format(departDate, "PPP")
-                  ) : (
-                    <span>Pick a date</span>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor={`legs.${index}.destination`}>To</Label>
+                  <Controller
+                    control={form.control}
+                    name={`legs.${index}.destination` as const}
+                    render={({ field }) => (
+                      <AirportCombobox
+                        id={`legs.${index}.destination`}
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="e.g., Doha (DOH)"
+                      />
+                    )}
+                  />
+                  {form.formState.errors.legs?.[index]?.destination && (
+                    <p className="text-red-500 text-sm">
+                      {form.formState.errors.legs[index]?.destination?.message}
+                    </p>
                   )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={departDate}
-                  onSelect={(date) => {
-                    if (!date) return;
-                    form.setValue("departDate", date, {
-                      shouldValidate: true,
-                    });
-                    if (
-                      form.watch("returnDate") &&
-                      date > form.watch("returnDate")!
-                    ) {
-                      form.setValue("returnDate", undefined, {
-                        shouldValidate: true,
-                      });
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor={`legs.${index}.date`}>Date</Label>
+                  <Popover
+                    open={openLegIndex === index}
+                    onOpenChange={(isOpen) =>
+                      setOpenLegIndex(isOpen ? index : null)
                     }
-                    setOpen(false); // Close depart date popover
-                  }}
-                  initialFocus
-                  disabled={(date) =>
-                    date < new Date(new Date().setHours(0, 0, 0, 0))
-                  }
-                />
-              </PopoverContent>
-            </Popover>
-            {form.formState.errors.departDate && (
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !form.watch(`legs.${index}.date`) &&
+                            "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.watch(`legs.${index}.date`) ? (
+                          format(form.watch(`legs.${index}.date`)!, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch(`legs.${index}.date`)}
+                        onSelect={(date) => {
+                          if (!date) return;
+                          form.setValue(`legs.${index}.date`, date, {
+                            shouldValidate: true,
+                          });
+                          setOpenLegIndex(null);
+                        }}
+                        initialFocus
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {form.formState.errors.legs?.[index]?.date && (
+                    <p className="text-red-500 text-sm">
+                      {form.formState.errors.legs[index]?.date?.message as string}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-end h-full pb-[2px]">
+                  {legFields.length > 2 && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="h-9 w-9 rounded-full bg-gray-200 hover:bg-gray-300 p-0"
+                      onClick={() => removeLeg(index)}
+                      aria-label={`Remove flight ${index + 1}`}
+                    >
+                      <Icon icon="radix-icons:cross-2" className="size-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {form.formState.errors.legs?.message && (
               <p className="text-red-500 text-sm">
-                {form.formState.errors.departDate.message}
+                {form.formState.errors.legs.message}
               </p>
             )}
-          </div>
 
-          {tripType === "roundTrip" && (
+            {legFields.length < MAX_LEGS && (
+              <Button
+                type="button"
+                variant="link"
+                className="text-red-800 hover:text-red-700 px-0"
+                onClick={() =>
+                  appendLeg({ origin: "", destination: "", date: undefined as unknown as Date })
+                }
+              >
+                <Icon icon="radix-icons:plus" className="mr-1 size-4" />
+                Add another flight
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="space-y-1">
-              <Label htmlFor="returnDate">Return</Label>
-              <Popover open={returnOpen} onOpenChange={setReturnOpen}>
+              <Label htmlFor="origin">From</Label>
+              <Controller
+                control={form.control}
+                name="origin"
+                render={({ field }) => (
+                  <AirportCombobox
+                    id="origin"
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="e.g., London (LHR)"
+                  />
+                )}
+              />
+              {form.formState.errors.origin && (
+                <p className="text-red-500 text-sm">
+                  {form.formState.errors.origin.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="destination">To</Label>
+              <Controller
+                control={form.control}
+                name="destination"
+                render={({ field }) => (
+                  <AirportCombobox
+                    id="destination"
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="e.g., Doha (DOH)"
+                  />
+                )}
+              />
+              {form.formState.errors.destination && (
+                <p className="text-red-500 text-sm">
+                  {form.formState.errors.destination.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="departDate">Depart</Label>
+              <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !form.watch("returnDate") && "text-muted-foreground",
+                      !departDate && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {form.watch("returnDate") ? (
-                      format(form.watch("returnDate")!, "PPP")
+                    {departDate ? (
+                      format(departDate, "PPP")
                     ) : (
                       <span>Pick a date</span>
                     )}
@@ -240,64 +388,120 @@ const SearchFlights = () => {
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={form.watch("returnDate")}
+                    selected={departDate}
                     onSelect={(date) => {
                       if (!date) return;
-                      form.setValue("returnDate", date, {
+                      form.setValue("departDate", date, {
                         shouldValidate: true,
                       });
-                      setReturnOpen(false); // Close return date popover
+                      if (
+                        form.watch("returnDate") &&
+                        date > form.watch("returnDate")!
+                      ) {
+                        form.setValue("returnDate", undefined, {
+                          shouldValidate: true,
+                        });
+                      }
+                      setOpen(false); // Close depart date popover
                     }}
                     initialFocus
                     disabled={(date) =>
-                      departDate
-                        ? date < new Date(departDate.setHours(0, 0, 0, 0))
-                        : date < new Date(new Date().setHours(0, 0, 0, 0))
+                      date < new Date(new Date().setHours(0, 0, 0, 0))
                     }
                   />
                 </PopoverContent>
               </Popover>
-              {form.formState.errors.returnDate && (
+              {form.formState.errors.departDate && (
                 <p className="text-red-500 text-sm">
-                  {form.formState.errors.returnDate.message}
+                  {form.formState.errors.departDate.message}
                 </p>
               )}
             </div>
-          )}
 
-          <div
-            className={cn(
-              "space-y-1",
-              tripType === "oneWay" ? "md:col-span-2" : "",
+            {tripType === "roundTrip" && (
+              <div className="space-y-1">
+                <Label htmlFor="returnDate">Return</Label>
+                <Popover open={returnOpen} onOpenChange={setReturnOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.watch("returnDate") && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.watch("returnDate") ? (
+                        format(form.watch("returnDate")!, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={form.watch("returnDate")}
+                      onSelect={(date) => {
+                        if (!date) return;
+                        form.setValue("returnDate", date, {
+                          shouldValidate: true,
+                        });
+                        setReturnOpen(false); // Close return date popover
+                      }}
+                      initialFocus
+                      disabled={(date) =>
+                        departDate
+                          ? date < new Date(departDate.setHours(0, 0, 0, 0))
+                          : date < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
+                {form.formState.errors.returnDate && (
+                  <p className="text-red-500 text-sm">
+                    {form.formState.errors.returnDate.message}
+                  </p>
+                )}
+              </div>
             )}
-          >
-            <Label htmlFor="passengers">Passengers</Label>
-            <Select
-              value={form.watch("passengers").toString()}
-              onValueChange={(value) =>
-                form.setValue("passengers", Number(value), {
-                  shouldValidate: true,
-                })
-              }
+
+            <div
+              className={cn(
+                "space-y-1",
+                tripType === "oneWay" ? "md:col-span-2" : "",
+              )}
             >
-              <SelectTrigger id="passengers">
-                <SelectValue placeholder="Select number of passengers" />
-              </SelectTrigger>
-              <SelectContent>
-                {[...Array(9)].map((_, i) => (
-                  <SelectItem key={i + 1} value={(i + 1).toString()}>
-                    {i + 1} Passenger{i + 1 > 1 ? "s" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.passengers && (
-              <p className="text-red-500 text-sm">
-                {form.formState.errors.passengers.message}
-              </p>
-            )}
+              <Label htmlFor="passengers">Passengers</Label>
+              <Select
+                value={form.watch("passengers").toString()}
+                onValueChange={(value) =>
+                  form.setValue("passengers", Number(value), {
+                    shouldValidate: true,
+                  })
+                }
+              >
+                <SelectTrigger id="passengers">
+                  <SelectValue placeholder="Select number of passengers" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...Array(9)].map((_, i) => (
+                    <SelectItem key={i + 1} value={(i + 1).toString()}>
+                      {i + 1} Passenger{i + 1 > 1 ? "s" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.passengers && (
+                <p className="text-red-500 text-sm">
+                  {form.formState.errors.passengers.message}
+                </p>
+              )}
+            </div>
           </div>
+        )}
 
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="space-y-1">
             <Label htmlFor="cabinClass">Cabin Class</Label>
             <Select
@@ -326,6 +530,36 @@ const SearchFlights = () => {
               </p>
             )}
           </div>
+
+          {tripType === "multiCity" && (
+            <div className="space-y-1">
+              <Label htmlFor="passengers">Passengers</Label>
+              <Select
+                value={form.watch("passengers").toString()}
+                onValueChange={(value) =>
+                  form.setValue("passengers", Number(value), {
+                    shouldValidate: true,
+                  })
+                }
+              >
+                <SelectTrigger id="passengers">
+                  <SelectValue placeholder="Select number of passengers" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...Array(9)].map((_, i) => (
+                    <SelectItem key={i + 1} value={(i + 1).toString()}>
+                      {i + 1} Passenger{i + 1 > 1 ? "s" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.passengers && (
+                <p className="text-red-500 text-sm">
+                  {form.formState.errors.passengers.message}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">

@@ -27,7 +27,7 @@ const App = () => {
             <FinalizeBooking />
           </div>
         )}
-        {bookingData?.outboundFlight.hasOwnProperty("flightNumber") &&
+        {bookingData?.selectedFlights?.some((flight: any) => flight) &&
           !sections.finalBooking && <BookingBubble />}
         <div className="text-center mt-18 mb-[130px]">
           <div className="flexitems-center">

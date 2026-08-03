@@ -2,46 +2,70 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "../ui/card";
 import { useFlightContext } from "../providers/FlightProvider";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { cn } from "@/lib/utils";
 
-function Flights({ flights }: { flights: any[] }) {
+function Flights({ flights, legIndex }: { flights: any[]; legIndex: number }) {
   const { setBookingData, bookingData, sections, handleContinueBooking } =
     useFlightContext();
+
+  const selectedFlights: any[] = bookingData?.selectedFlights || [];
+
   const handleBookFlight = (flight: any) => {
-    setBookingData((prevData: any) => ({
-      ...prevData,
-      outboundFlight: sections.outboundFlights
-        ? flight
-        : prevData.outboundFlight,
-      returnFlight: sections.returnFlights ? flight : prevData.returnFlight,
-    }));
-    localStorage.setItem(
-      "bookingData",
-      JSON.stringify({
-        ...bookingData,
-        outboundFlight: sections.outboundFlights
-          ? flight
-          : bookingData?.outboundFlight,
-        returnFlight: sections.returnFlights
-          ? flight
-          : bookingData?.returnFlight,
-      })
-    );
+    const nextSelected = [...selectedFlights];
+    nextSelected[legIndex] = flight;
+
+    setBookingData((prevData: any) => {
+      const updated = { ...prevData, selectedFlights: nextSelected };
+      localStorage.setItem("bookingData", JSON.stringify(updated));
+      return updated;
+    });
+
+    // Selecting a flight for the leg currently being shown advances the
+    // flow. Once every leg has a selection, go straight to final review -
+    // this matters when revising an earlier leg whose neighbors were
+    // already picked (e.g. changing leg 1 of a round trip after leg 2 was
+    // already chosen): without this check it would force re-confirming
+    // leg 2 again instead of returning straight to the summary. Selecting
+    // a flight while NOT on the leg currentLegIndex points at (e.g. the
+    // review screen's own re-select) leaves navigation untouched.
+    if (legIndex === sections.currentLegIndex) {
+      const totalLegs = sections.totalLegs || legIndex + 1;
+      const allLegsSelected = Array.from({ length: totalLegs }).every(
+        (_, i) => Boolean(nextSelected[i]),
+      );
+
+      if (allLegsSelected) {
+        handleContinueBooking({ finalBooking: true });
+      } else {
+        let next = legIndex + 1;
+        while (next < totalLegs && nextSelected[next]) next++;
+        handleContinueBooking({
+          currentLegIndex: next < totalLegs ? next : legIndex,
+        });
+      }
+    }
   };
 
   if (!flights || flights.length === 0) {
     return <p className="text-center text-gray-500">No flights found.</p>;
   }
 
-  // console.log("Flights data:", flights);
+  const selectedFlightNumber = selectedFlights[legIndex]?.flightNumber;
 
   return (
     <div className="w-full flex flex-col gap-4">
       {flights.length &&
         flights.map((flight, idx) => {
+          const isSelected = selectedFlightNumber === flight.flightNumber;
           return (
             <Card
               key={idx}
-              className="p-6 shadow-lg shadow-red-200/10 border rounded-2xl"
+              className={cn(
+                "p-6 shadow-lg shadow-red-200/10 border rounded-2xl transition-colors",
+                isSelected
+                  ? "border-red-800 border-2 bg-red-50/60"
+                  : "border-gray-200",
+              )}
             >
               <CardContent className="flex flex-col lg:flex-row justify-between items-center gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
@@ -65,7 +89,7 @@ function Flights({ flights }: { flights: any[] }) {
                                 >
                                   {layover.flightNumber}
                                 </p>
-                              )
+                              ),
                             )}
                           </div>
                         )}
@@ -120,15 +144,15 @@ function Flights({ flights }: { flights: any[] }) {
                               {layover.city}
                             </span>
                           </p>
-                        )
+                        ),
                       )}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">Non-stop</p>
                   )}
-                  {flight.aircraft && (
+                  {flight.aircraftType && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Aircraft: {flight.aircraft}
+                      Aircraft: {flight.aircraftType}
                     </p>
                   )}
                 </div>
@@ -137,18 +161,18 @@ function Flights({ flights }: { flights: any[] }) {
                 <div className="w-full sm:w-auto flex flex-col items-start justify-center sm:items-end gap-2">
                   <Button
                     onClick={() => handleBookFlight(flight)}
-                    className=" bg-gray-800 hover:bg-black text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto cursor-pointer h-9"
+                    className={cn(
+                      "text-white font-bold px-6 py-2 rounded-full w-full sm:w-auto cursor-pointer h-9",
+                      isSelected
+                        ? "bg-red-800 hover:bg-red-700"
+                        : "bg-gray-800 hover:bg-black",
+                    )}
                   >
-                    {sections.finalBooking
-                      ? "selected flight"
-                      : "select flight"}
-                    {(bookingData?.outboundFlight.flightNumber ===
-                      flight.flightNumber ||
-                      bookingData?.returnFlight.flightNumber ===
-                        flight.flightNumber) && (
+                    {isSelected ? "Selected" : "Select flight"}
+                    {isSelected && (
                       <Icon
                         icon="mdi:check-circle"
-                        className="inline ml-2 text-green-500"
+                        className="inline ml-2 text-white"
                       />
                     )}
                   </Button>
@@ -161,20 +185,6 @@ function Flights({ flights }: { flights: any[] }) {
                       })}
                     </span>
                   </h4>
-                  {sections.finalBooking && (
-                    <button
-                      onClick={() =>
-                        handleContinueBooking({
-                          outboundFlights: false,
-                          returnFlights: true,
-                          finalBooking: false,
-                        })
-                      }
-                      className="text-[12px] text-rose-700 underline hover:text-rose-800 font-semibold cursor-pointer"
-                    >
-                      change flight{" "}
-                    </button>
-                  )}
                 </div>
               </CardContent>
             </Card>

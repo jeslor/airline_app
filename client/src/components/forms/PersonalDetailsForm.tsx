@@ -67,8 +67,7 @@ export function PersonalDetailsForm() {
         },
         body: JSON.stringify({
           passenger: data,
-          outboundFlight: bookingData?.outboundFlight,
-          returnFlight: bookingData?.returnFlight,
+          flights: bookingData?.selectedFlights || [],
           bookingDate: format(new Date().toISOString(), "yyyy-MM-dd"),
           bookingTime: format(new Date().toISOString(), "HH:mm"),
         }),

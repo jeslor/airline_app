@@ -217,7 +217,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
 1. Create Web Service on [render.com](https://render.com), root directory `server`
 2. Connect GitHub repo
-3. **Build Command**: `npm install` (this alone also generates the Prisma client via a `postinstall` hook, and downloads Puppeteer's bundled Chromium - no extra install steps needed)
+3. **Build Command**: `npm install && npx puppeteer browsers install chrome` - the explicit Puppeteer install step is required because npm can skip re-running a dependency's own postinstall (Chrome's download) across Render's cached builds, even though `npm install` alone does reliably run our own `postinstall` (Prisma client generation)
 4. **Start Command**: `npm start`
 5. Set environment variables (see above), plus `NODE_ENV=production`
 6. Register a Stripe webhook endpoint pointing at `https://<your-render-url>/api/webhooks/stripe` (events: `payment_intent.succeeded`, `payment_intent.payment_failed`) and set its signing secret as `STRIPE_WEBHOOK_SECRET`

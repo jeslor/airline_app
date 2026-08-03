@@ -1,17 +1,28 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useState } from "react";
 
+interface LegResult {
+  origin: string;
+  destination: string;
+  date: string;
+  flights: any[];
+}
+
+interface Sections {
+  currentLegIndex: number;
+  totalLegs: number;
+  finalBooking: boolean;
+}
+
 interface FlightContextType {
   flightData: {
-    outboundFlights: any[];
-    returnFlights: any[];
+    legs: LegResult[];
   };
   isSearchingFlights: boolean;
   isSubmitting: boolean;
   bookingData: {
     passenger: any;
-    outboundFlight: any;
-    returnFlight: any;
+    selectedFlights: (any | null)[];
     totalPrice: string;
     bookingDate: string;
     bookingTime: string;
@@ -22,26 +33,39 @@ interface FlightContextType {
     currency?: string;
     paymentStatus?: "idle" | "pending" | "confirmed" | "failed";
   } | null;
-  sections: any;
-  setSections: (section: any) => void;
+  sections: Sections;
+  setSections: (section: Sections) => void;
   setBookingData: (data: any) => void;
   setFlightData: (data: any) => void;
   setIsSubmitting: (isSubmitting: boolean) => void;
   handleSetIsSearchingFlights: (isSearching: boolean) => void;
-  handleContinueBooking: (newSection: {
-    outboundFlights?: boolean;
-    returnFlights?: boolean;
-    finalBooking?: boolean;
-  }) => void;
+  handleContinueBooking: (newSection: Partial<Sections>) => void;
   handleStartOver: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 const FlightContext = createContext<FlightContextType | undefined>(undefined);
+
+const defaultBookingData = {
+  passenger: {},
+  selectedFlights: [],
+  totalPrice: "0",
+  bookingStatus: "",
+  bookingDate: "",
+  bookingTime: "",
+  bookingReference: "",
+  paymentStatus: "idle" as const,
+};
+
+const defaultSections: Sections = {
+  currentLegIndex: 0,
+  totalLegs: 0,
+  finalBooking: false,
+};
 
 export const FlightProvider = ({ children }: { children: ReactNode }) => {
   const [flightData, setFlightData] = useState<any>(
     localStorage.getItem("flightData")
       ? JSON.parse(localStorage.getItem("flightData")!)
-      : {}
+      : { legs: [] }
   );
 
   const [isSearchingFlights, setIsSearchingFlights] = useState<boolean>(false);
@@ -49,27 +73,12 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
   const [bookingData, setBookingData] = useState<any>(
     localStorage.getItem("bookingData")
       ? JSON.parse(localStorage.getItem("bookingData")!)
-      : {
-          passenger: {},
-          outboundFlight: {},
-          returnFlight: {},
-          totalPrice: 0,
-          bookingStatus: "",
-          bookingId: "",
-          bookingDate: "",
-          bookingTime: "",
-          bookingReference: "",
-          paymentStatus: "idle",
-        }
+      : defaultBookingData
   );
-  const [sections, setSections] = useState<any>(
+  const [sections, setSections] = useState<Sections>(
     localStorage.getItem("sections")
       ? JSON.parse(localStorage.getItem("sections")!)
-      : {
-          outboundFlights: true,
-          returnFlights: false,
-          finalBooking: false,
-        }
+      : defaultSections
   );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -77,25 +86,12 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
     setIsSearchingFlights(isSearching);
   };
 
-  const handleContinueBooking = (
-    newSection: {
-      outboundFlights?: boolean;
-      returnFlights?: boolean;
-      finalBooking?: boolean;
-    } = {}
-  ) => {
-    setSections((prevSections: any) => ({
-      ...prevSections,
-      ...newSection,
-    }));
-
-    localStorage.setItem(
-      "sections",
-      JSON.stringify({
-        ...sections,
-        ...newSection,
-      })
-    );
+  const handleContinueBooking = (newSection: Partial<Sections> = {}) => {
+    setSections((prevSections: Sections) => {
+      const merged = { ...prevSections, ...newSection };
+      localStorage.setItem("sections", JSON.stringify(merged));
+      return merged;
+    });
   };
 
   const handleStartOver = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -103,27 +99,9 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("bookingData");
     localStorage.removeItem("flightData");
     localStorage.removeItem("sections");
-    setSections({
-      outboundFlights: true,
-      returnFlights: false,
-      finalBooking: false,
-    });
-    setBookingData({
-      passenger: {},
-      outboundFlight: {},
-      returnFlight: {},
-      totalPrice: 0,
-      bookingStatus: "",
-      bookingId: "",
-      bookingDate: "",
-      bookingTime: "",
-      bookingReference: "",
-      paymentStatus: "idle",
-    });
-    setFlightData({
-      outboundFlights: [],
-      returnFlights: [],
-    });
+    setSections(defaultSections);
+    setBookingData(defaultBookingData);
+    setFlightData({ legs: [] });
   };
 
   return (
@@ -131,7 +109,6 @@ export const FlightProvider = ({ children }: { children: ReactNode }) => {
       value={{
         sections,
         setSections,
-        // Placeholder for future use
         isSubmitting,
         bookingData,
         setBookingData,
